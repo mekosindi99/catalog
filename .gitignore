@@ -10,3 +10,5 @@ android/app/release/
 android/local.properties
 *.jks
 *.keystore
+android/
+sync_android_assets.js
