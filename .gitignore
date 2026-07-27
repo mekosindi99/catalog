@@ -1,0 +1,12 @@
+# Secrets — never publish these to the public repo
+info.txt
+mobile_info/
+
+# Android build artifacts / local machine config
+android/.gradle/
+android/.idea/
+android/app/build/
+android/app/release/
+android/local.properties
+*.jks
+*.keystore

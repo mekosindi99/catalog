@@ -12,7 +12,7 @@
   <meta name="theme-color" content="#e85d3a" />
   <link rel="manifest" id="pwa-manifest-link" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23FDF6F0'/%3E%3Cpath d='M12 40c0-3 3-6 6-6h22l6 8H18c-3 0-6 2-6 5z' fill='%23C44828'/%3E%3Cpath d='M18 34h22l6 8h36c3 0 6 3 6 6v28c0 3-3 6-6 6H18c-3 0-6-3-6-6V40c0-3 3-6 6-6z' fill='%23E85D3A'/%3E%3C/svg%3E" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="tailwind.js"></script>
   <style>
     /* ── Kill Tailwind CDN badge + any injected fixed overlays ── */
     body > div:last-of-type:not([id]):not([class*="modal"]):not([class*="toast"]):not([class*="ctx"]) { display: none !important; }
@@ -27,9 +27,7 @@
     body > div[style*="border-radius"][style*="fixed"],
     body > div[style*="border-radius"][style*="bottom"] { display: none !important; }
   </style>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="fonts/inter.css" />
   <script>
     // Remove Tailwind CDN badge on load and via MutationObserver
     (function removeTwBadge() {

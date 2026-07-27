@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- folder back tab (scaled/centered within the 66dp adaptive-icon safe zone) -->
+    <path
+        android:fillColor="#C44828"
+        android:pathData="M28,40 L28,37 C28,35.34 29.34,34 31,34 L46,34 L50,40 L76,40 C77.66,40 79,41.34 79,43 L79,46 L28,46 Z" />
+
+    <!-- folder body -->
+    <path
+        android:fillColor="#E85D3A"
+        android:pathData="M26,44.5 C26,42.84 27.34,41.5 29,41.5 L79,41.5 C80.66,41.5 82,42.84 82,44.5 L82,72 C82,73.66 80.66,75 79,75 L29,75 C27.34,75 26,73.66 26,72 Z" />
+
+    <!-- sheen -->
+    <path
+        android:fillColor="#FF7A5A"
+        android:fillAlpha="0.55"
+        android:pathData="M26,44.5 C26,42.84 27.34,41.5 29,41.5 L79,41.5 C80.66,41.5 82,42.84 82,44.5 L82,49 L26,49 Z" />
+</vector>
