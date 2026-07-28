@@ -952,31 +952,40 @@
     }
     .folder-card:hover::before { opacity: 1; }
 
-    /* ── Folder-shaped preview (tab peeking behind a rounded body) — the body holds either
-       the 4-image collage or a plain color fill when the folder is empty. ── */
+    /* ── Folder-shaped preview — the whole wrap is clipped to the exact same folder
+       silhouette (tab + rounded body) as the app's own icon, via a CSS mask, so the
+       shape is one smooth continuous outline rather than two stacked rounded rects.
+       A solid color layer fills the whole thing (shows through as the tab, and as the
+       full folder when empty); the 4-image collage sits on top, confined to the body
+       area, and the name/count caption overlays the bottom with a gradient scrim. ── */
     .folder-shape-wrap {
       position: relative;
-      width: 100%; height: 80px;
+      width: 100%; height: 140px;
       margin-bottom: 10px;
       transition: transform 0.22s;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M12 34V26Q12 16 22 16H40L50 26H78Q88 26 88 34Z' fill='white'/%3E%3Crect x='12' y='34' width='76' height='50' rx='10' fill='white'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M12 34V26Q12 16 22 16H40L50 26H78Q88 26 88 34Z' fill='white'/%3E%3Crect x='12' y='34' width='76' height='50' rx='10' fill='white'/%3E%3C/svg%3E");
+      -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+      -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
     }
     .folder-card:hover .folder-shape-wrap { transform: scale(1.03); }
-    .folder-shape-tab {
-      position: absolute; top: 0; left: 0;
-      width: 52%; height: 28%;
-      border-radius: 8px 10px 0 0;
-      clip-path: polygon(0% 100%, 0% 22%, 14% 0%, 100% 0%, 100% 100%);
-    }
+    .folder-shape-fill { position: absolute; inset: 0; }
     .folder-shape-body {
       position: absolute; left: 0; right: 0; bottom: 0;
-      top: 16%;
-      border-radius: 10px;
-      overflow: hidden;
+      top: 32%;
       display: grid; gap: 2px;
-      background: #f0ebe7;
     }
+    .folder-shape-caption {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 10px;
+      background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 60%);
+      pointer-events: none;
+    }
+    .folder-shape-caption .folder-name { color: #fff; font-weight: 800; font-size: 0.85rem; line-height: 1.2; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+    .folder-shape-caption .folder-count { color: rgba(255,255,255,0.85); font-size: 0.68rem; font-weight: 600; margin-top: 1px; }
     @media (max-width: 640px) {
-      .folder-shape-wrap { height: 160px; }
+      .folder-shape-wrap { height: 170px; }
       .folder-card { border-radius: 16px; padding: 1rem; }
     }
     .folder-shape-body[data-count="1"] { grid-template-columns: 1fr; }
@@ -3591,7 +3600,6 @@ service cloud.firestore {
     // ── Folder rendering ──
     function folderCardHTML(folder) {
       const color = folder.color || "#e85d3a";
-      const bgAlpha = color + "22";
       const count = allModels.filter(m => m.folderId === folder.id).length;
       const dateStr = folder.createdAt
         ? new Date(folder.createdAt.toDate ? folder.createdAt.toDate() : folder.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
@@ -3600,11 +3608,12 @@ service cloud.firestore {
       const safeFolderId = escapeHtml(folder.id);
 
       // Build image collage (up to 4 images) inside a folder-shaped silhouette (tab + body) —
-      // the body shows the collage grid when there are images, or a plain color fill when empty.
+      // the body shows the collage grid when there are images; when empty, it's left transparent
+      // so the solid color fill layer behind it shows through as one plain-colored folder.
       const previewModels = allModels.filter(m => m.folderId === folder.id && m.imageUrl).slice(0, 4);
       let bodyHTML;
       if (previewModels.length === 0) {
-        bodyHTML = `<div class="folder-shape-body" style="background:${bgAlpha}"></div>`;
+        bodyHTML = '';
       } else {
         const cells = previewModels.map(m => {
           const src = optimizedCloudinaryUrl(m.imageUrl, m.imageSize);
@@ -3612,9 +3621,22 @@ service cloud.firestore {
         }).join('');
         bodyHTML = `<div class="folder-shape-body" data-count="${previewModels.length}">${cells}</div>`;
       }
+      const discountBadge = folder.discount && folder.discount.value > 0
+        ? `<span style="background:#ef4444;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;">-${folder.discount.type === 'percent' ? folder.discount.value + '%' : fmt(folder.discount.value)}</span>`
+        : (globalDiscount && globalDiscount.value > 0
+          ? `<span style="background:#f97316;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;">-${globalDiscount.type === 'percent' ? globalDiscount.value + '%' : fmt(globalDiscount.value)}</span>`
+          : '');
+
       const previewHTML = `<div class="folder-shape-wrap">
-          <div class="folder-shape-tab" style="background:${color}"></div>
+          <div class="folder-shape-fill" style="background:${color}"></div>
           ${bodyHTML}
+          <div class="folder-shape-caption">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+              <span class="folder-name">${safeFolderName}</span>
+              ${discountBadge}
+            </div>
+            <span class="folder-count">${count} ${count === 1 ? 'model' : 'models'}${folder.hiddenFromSearch ? ' • Hidden from search' : ''}</span>
+          </div>
         </div>`;
 
       return `
@@ -3625,14 +3647,7 @@ service cloud.firestore {
             </svg>
           </button>
           ${previewHTML}
-          <div class="flex items-center justify-between gap-1 pr-6">
-            <p class="font-extrabold text-gray-800 text-sm mb-0.5 leading-tight">${safeFolderName}</p>
-            ${folder.discount && folder.discount.value > 0 ? `<span style="background:#ef4444;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;flex-shrink:0;">-${folder.discount.type === 'percent' ? folder.discount.value + '%' : fmt(folder.discount.value)}</span>` : (globalDiscount && globalDiscount.value > 0 ? `<span style="background:#f97316;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;flex-shrink:0;">-${globalDiscount.type === 'percent' ? globalDiscount.value + '%' : fmt(globalDiscount.value)}</span>` : '')}
-          </div>
-          <p class="text-xs text-gray-400 font-medium">
-            ${count} ${count === 1 ? 'model' : 'models'}${folder.hiddenFromSearch ? ' <span title="Hidden from advanced search" style="color:#f59e0b;font-weight:800;">• Hidden from search</span>' : ''}
-          </p>
-          ${dateStr ? `<p class="text-[10px] text-gray-300 font-medium mt-1">${escapeHtml(dateStr)}</p>` : ''}
+          ${dateStr ? `<p class="text-[10px] text-gray-300 font-medium mt-1.5">${escapeHtml(dateStr)}</p>` : ''}
         </div>`;
     }
 
