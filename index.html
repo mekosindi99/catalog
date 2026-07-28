@@ -5588,10 +5588,18 @@ service cloud.firestore {
     function applyFilters() {
       if (isSearchMode) {
         const sf = window._searchFilters || {};
-        let list = allModels.filter(m => {
-          const folder = allFolders.find(f => f.id === m.folderId);
-          return !(folder && folder.hiddenFromSearch);
-        });
+        // Search only inside folders that actually exist, aren't in the trash, aren't opted out
+        // of search, and that this user is allowed to see. Building an allow-list of folder ids
+        // (rather than testing each model's folder) also drops orphaned models — ones whose
+        // folderId is missing or points at a folder that was deleted.
+        const allowedFolders = window._currentUserAllowedFolders;
+        const searchableFolderIds = new Set(
+          allFolders
+            .filter(f => !f.deleted && !f.hiddenFromSearch)
+            .filter(f => !Array.isArray(allowedFolders) || allowedFolders.includes(f.id))
+            .map(f => f.id)
+        );
+        let list = allModels.filter(m => searchableFolderIds.has(m.folderId));
         if (window._currentUserRole === "co_admin") {
           list = list.filter(m => !m.pendingDelete);
         }
