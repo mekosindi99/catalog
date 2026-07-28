@@ -3478,12 +3478,7 @@ service cloud.firestore {
     window.escapeHtml = escapeHtml;
 
     function showToast(msg, type="success") {
-      const t = document.getElementById("toast");
-      const msgEl = document.getElementById("toast-message");
-      if (msgEl) msgEl.textContent = msg; else t.textContent = msg;
-      t.className = `toast ${type}`;
-      void t.offsetWidth; t.classList.add("show");
-      // No auto-hide — the popup stays open until the user taps the × button.
+      // Toast notifications are disabled — kept as a no-op since many code paths still call it.
     }
     window.fmt = fmt;
 
@@ -5414,18 +5409,24 @@ service cloud.firestore {
 
     function populateAdvSearchOptions() {
       const ageSel = document.getElementById('adv-search-age');
-      if (ageSel && !ageSel.dataset.filled) {
-        let maxMonths = 0;
-        allModels.forEach(m => (m.ageGroup || '').split(',').map(t => t.trim()).filter(Boolean).forEach(tag => {
-          const r = parseAgeTagMonths(tag);
-          if (r && r.to > maxMonths) maxMonths = r.to;
-        }));
-        buildAgeBrackets(maxMonths).forEach(b => {
-          window._ageBracketsMap[b.value] = b;
-          const o = document.createElement('option'); o.value = b.value; o.textContent = b.label; ageSel.appendChild(o);
-        });
-        ageSel.dataset.filled = '1';
-      }
+      if (!ageSel) return;
+      // Rebuilt every time the panel opens (not just once) — allModels may still be empty
+      // on the very first open if Firestore hasn't finished its initial load yet.
+      const prevValue = ageSel.value;
+      let maxMonths = 0;
+      allModels.forEach(m => (m.ageGroup || '').split(',').map(t => t.trim()).filter(Boolean).forEach(tag => {
+        const r = parseAgeTagMonths(tag);
+        if (r && r.to > maxMonths) maxMonths = r.to;
+      }));
+      const placeholder = ageSel.options.length ? ageSel.options[0] : null;
+      ageSel.innerHTML = '';
+      if (placeholder) ageSel.appendChild(placeholder);
+      window._ageBracketsMap = {};
+      buildAgeBrackets(maxMonths).forEach(b => {
+        window._ageBracketsMap[b.value] = b;
+        const o = document.createElement('option'); o.value = b.value; o.textContent = b.label; ageSel.appendChild(o);
+      });
+      if (Array.from(ageSel.options).some(o => o.value === prevValue)) ageSel.value = prevValue;
     }
 
     // ── Admin-configurable Type/Season/Gender lists (app_settings/catalogOptions) ──
