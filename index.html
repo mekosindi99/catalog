@@ -6389,9 +6389,52 @@ service cloud.firestore {
     }
     window.updateSelectionBar = updateSelectionBar;
 
-    window.copySelectedImages = function() {
+    // "Copy" on a desktop browser (no Android bridge, and Web Share's file-sharing is mobile-only
+    // in practice): the one browser feature that genuinely puts an image on the OS clipboard —
+    // pasteable with Ctrl+V into WhatsApp Web/Desktop, Telegram, Slack, Word, anywhere — is the
+    // async Clipboard API writing an image/png ClipboardItem. It only holds ONE image at a time
+    // (that's an OS clipboard limitation, not something any web page can work around), so with
+    // multiple models selected we copy the first and say so plainly in the status line.
+    window.copyImageToClipboard = async function(models) {
+      const setStatus = (msg) => {
+        const el = document.getElementById('selection-bar-status');
+        if (el) el.textContent = msg;
+      };
+      if (!(navigator.clipboard && typeof ClipboardItem !== 'undefined')) return false;
+      const m = models[0];
+      const imgUrl = downloadCloudinaryUrl(m.imageUrl, m.imageSize, 'png');
+      if (!imgUrl) return false;
+      setStatus('Copying...');
+      try {
+        const resp = await fetch(imgUrl);
+        if (!resp.ok) throw new Error('fetch failed: ' + resp.status);
+        const blob = await resp.blob();
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        setStatus(models.length > 1
+          ? `Copied image 1 of ${models.length} (clipboard holds one at a time) — paste with Ctrl+V`
+          : 'Copied! Paste with Ctrl+V into WhatsApp/any app');
+        return true;
+      } catch (e) {
+        console.error('copyImageToClipboard failed:', e);
+        return false;
+      }
+    };
+
+    window.copySelectedImages = async function() {
       if (!selectedIds.size) return;
-      return window.shareSelectedImages();
+      const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
+      if (!models.length) return;
+
+      // Inside the Android app: unchanged, real native multi-image share sheet.
+      if (window.AndroidDownloader && typeof window.AndroidDownloader.shareImages === 'function') {
+        return window.shareSelectedImages();
+      }
+
+      if (await window.copyImageToClipboard(models)) return;
+
+      // Clipboard API unavailable/blocked — try the Web Share API (real file sharing on the
+      // mobile browsers that support it) before giving up.
+      return window.shareSelectedImagesWeb(models);
     };
 
     window.downloadSelectedFromBar = async function() {
