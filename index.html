@@ -5466,6 +5466,7 @@ service cloud.firestore {
         populateCatalogOptionSelects();
         showToast('Catalog fields saved ✓', 'success');
       } catch (e) {
+        console.error('saveCatalogOptions failed:', e);
         showToast('Failed to save catalog fields', 'error');
       }
     };
