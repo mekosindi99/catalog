@@ -26,6 +26,16 @@
     /* Tailwind Play CDN badge (appended at end of body as <div style="..."> */
     body > div[style*="border-radius"][style*="fixed"],
     body > div[style*="border-radius"][style*="bottom"] { display: none !important; }
+    /* Our own floating selection bar deliberately uses fixed+bottom positioning too — give it
+       a real class instead of inline styles so none of the anti-badge rules above (which match
+       on the raw `style` attribute text) can catch it. */
+    #selection-bar {
+      position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 150;
+      align-items: center; gap: 10px; background: #1a1a2e; color: #fff; padding: 10px 14px;
+      border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); max-width: calc(100vw - 24px);
+    }
+    #selection-bar.hidden { display: none; }
+    #selection-bar:not(.hidden) { display: flex; }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -2080,9 +2090,7 @@ service cloud.firestore {
        Appears whenever one or more model cards are checked (folder view or search
        results). Exactly two actions: Copy (native share sheet, no links — real image
        files handed to WhatsApp/any app) and Download (ZIP of the selected images). -->
-  <div id="selection-bar" class="hidden" style="position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:150;
-      display:flex;align-items:center;gap:10px;background:#1a1a2e;color:#fff;padding:10px 14px;border-radius:16px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.25);max-width:calc(100vw - 24px);">
+  <div id="selection-bar" class="hidden">
     <span id="selection-bar-count" class="text-xs font-bold" style="white-space:nowrap;">0 selected</span>
     <button type="button" onclick="window.copySelectedImages()"
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#2d2d4e;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
