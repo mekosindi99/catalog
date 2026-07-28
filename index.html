@@ -9250,6 +9250,9 @@ service cloud.firestore {
         if (fallback) fallback.classList.remove("hidden");
         if (hint) hint.textContent = "No logo set — using default icon";
       }
+      // Fresh fetch every time this tab opens — don't rely on the one-shot startup load,
+      // which may not have resolved yet if the tab is opened right after a page refresh.
+      if (window.loadCatalogOptions) await window.loadCatalogOptions();
       if (window.fillCatalogOptionsTextareas) window.fillCatalogOptionsTextareas();
     };
 
@@ -9341,7 +9344,7 @@ service cloud.firestore {
       await setDoc(doc(db,"app_settings","catalogOptions"), data, { merge: true });
     };
 
-    async function loadCatalogOptions() {
+    window.loadCatalogOptions = async function loadCatalogOptions() {
       try {
         const snap = await getDoc(doc(db,"app_settings","catalogOptions"));
         if (snap.exists()) {
@@ -9355,7 +9358,7 @@ service cloud.firestore {
       } catch(e) { console.warn('catalogOptions load failed', e); }
       if (window.populateCatalogOptionSelects) window.populateCatalogOptionSelects();
     }
-    loadCatalogOptions();
+    window.loadCatalogOptions();
   </script>
 
 </body>
