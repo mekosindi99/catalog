@@ -36,6 +36,9 @@
       function kill() {
         document.querySelectorAll('body > div').forEach(el => {
           if (!el.id && !el.className) { el.remove(); return; }
+          // Only the anonymous badge should ever match past this point — real app elements
+          // always carry an id (e.g. #selection-bar is also fixed+bottom-positioned).
+          if (el.id) return;
           const s = el.getAttribute('style') || '';
           if (s.includes('fixed') && s.includes('bottom')) el.remove();
           if (s.includes('2147483647')) el.remove();
@@ -2072,6 +2075,31 @@ service cloud.firestore {
     </div>
 
   </main>
+
+  <!-- ==================== FLOATING SELECTION BAR ====================
+       Appears whenever one or more model cards are checked (folder view or search
+       results). Exactly two actions: Copy (native share sheet, no links — real image
+       files handed to WhatsApp/any app) and Download (ZIP of the selected images). -->
+  <div id="selection-bar" class="hidden" style="position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:150;
+      display:flex;align-items:center;gap:10px;background:#1a1a2e;color:#fff;padding:10px 14px;border-radius:16px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.25);max-width:calc(100vw - 24px);">
+    <span id="selection-bar-count" class="text-xs font-bold" style="white-space:nowrap;">0 selected</span>
+    <button type="button" onclick="window.copySelectedImages()"
+      style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#2d2d4e;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+      Copy
+    </button>
+    <button type="button" onclick="window.downloadSelectedFromBar()"
+      style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#e85d3a;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      Download
+    </button>
+    <button type="button" onclick="window.clearCardSelection()" title="Clear selection"
+      style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,0.1);color:#fff;">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <span id="selection-bar-status" class="text-xs" style="white-space:nowrap;color:#fbbf24;"></span>
+  </div>
 
   <!-- Folder Context Menu (global, repositioned dynamically) -->
   <div id="folder-context-menu" class="folder-context-menu hidden" onclick="event.stopPropagation()">
@@ -5748,6 +5776,7 @@ service cloud.firestore {
           _hideActiveOverlay();
         }
       }, true);
+      updateSelectionBar();
     }
 
     function updateAdminUI() {
@@ -6314,10 +6343,13 @@ service cloud.firestore {
       const visibleModels = currentFolderId ? allModels.filter(m => m.folderId === currentFolderId) : allModels;
       visibleModels.forEach(m=>{ selectedIds.add(m.id); const card=document.querySelector(`.model-card[data-id="${m.id}"]`); if(card){card.classList.add("selected");const cb=card.querySelector(".card-checkbox");if(cb)cb.checked=true;} });
       updateSelectAllBtn();
+      updateSelectionBar();
     }
     function clearSelection() {
       selectedIds.clear(); document.querySelectorAll(".model-card.selected").forEach(c=>c.classList.remove("selected")); document.querySelectorAll(".card-checkbox").forEach(cb=>cb.checked=false); updateSelectAllBtn();
+      updateSelectionBar();
     }
+    window.clearCardSelection = clearSelection;
     function updateSelectAllBtn() {
       const btn=document.getElementById("select-all-btn"); const label=document.getElementById("select-all-label"); if(!btn||!label) return;
       const visibleModels = currentFolderId ? allModels.filter(m => m.folderId === currentFolderId) : allModels;
@@ -6329,6 +6361,34 @@ service cloud.firestore {
       if(checked) selectedIds.add(id); else selectedIds.delete(id);
       const card=document.querySelector(`.model-card[data-id="${id}"]`); if(card) card.classList.toggle("selected",checked);
       updateSelectAllBtn();
+      updateSelectionBar();
+    };
+
+    // Shows/hides the floating Copy/Download bar and keeps its count in sync — called from
+    // every place selectedIds changes (checkbox click, Select All, Deselect, clearing).
+    function updateSelectionBar() {
+      const bar = document.getElementById('selection-bar');
+      const countEl = document.getElementById('selection-bar-count');
+      const statusEl = document.getElementById('selection-bar-status');
+      if (!bar) return;
+      if (selectedIds.size > 0) {
+        bar.classList.remove('hidden');
+        if (countEl) countEl.textContent = `${selectedIds.size} selected`;
+      } else {
+        bar.classList.add('hidden');
+        if (statusEl) statusEl.textContent = '';
+      }
+    }
+    window.updateSelectionBar = updateSelectionBar;
+
+    window.copySelectedImages = function() {
+      if (!selectedIds.size) return;
+      return window.shareSelectedImages();
+    };
+
+    window.downloadSelectedFromBar = async function() {
+      if (!selectedIds.size) return;
+      await downloadSelected('all', 'jpg');
     };
 
     // ── Round rect helper ──
@@ -6760,14 +6820,13 @@ service cloud.firestore {
     // just tell the user to use Download instead there.
     window.shareSelectedImages = async function() {
       const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
-      if (!models.length) { showToast("لم يتم تحديد أي صور", "error"); return; }
+      if (!models.length) return;
 
       if (!window.AndroidDownloader || typeof window.AndroidDownloader.shareImages !== "function") {
-        showToast("المشاركة المباشرة متاحة بس داخل تطبيق الأندرويد — استخدم التنزيل هنا", "error");
-        return;
+        // Not running inside the Android app — hand off to the Web Share API path instead.
+        return window.shareSelectedImagesWeb(models);
       }
 
-      showToast(`⏳ جاري التحضير... (${models.length})`, "success");
       const images = [];
       for (let i = 0; i < models.length; i++) {
         const m = models[i];
@@ -6792,8 +6851,49 @@ service cloud.firestore {
         } catch (e) { console.warn('share prep error', e); }
       }
 
-      if (!images.length) { showToast("تعذّر تجهيز الصور للمشاركة", "error"); return; }
+      if (!images.length) return;
       window.AndroidDownloader.shareImages(JSON.stringify(images));
+    };
+
+    // Browser fallback for "Copy" when there's no native Android bridge: the Web Share API
+    // (Level 2, file sharing) hands the OS share sheet the actual image bytes — no link
+    // involved — same as the Android path, just through a different mechanism. Supported on
+    // Chrome/Edge Android and recent mobile Safari; unsupported browsers get a plain status
+    // message (toasts are disabled app-wide) telling the user to use Download instead.
+    window.shareSelectedImagesWeb = async function(models) {
+      const setStatus = (msg) => {
+        const el = document.getElementById('selection-bar-status');
+        if (el) el.textContent = msg;
+      };
+      if (!(navigator.share && navigator.canShare)) {
+        setStatus("Direct sharing isn't supported in this browser — use Download");
+        return;
+      }
+      setStatus(`Preparing ${models.length}...`);
+      try {
+        const files = [];
+        for (let i = 0; i < models.length; i++) {
+          const m = models[i];
+          const imgUrl = downloadCloudinaryUrl(m.imageUrl, m.imageSize, 'jpg');
+          if (!imgUrl) continue;
+          const resp = await fetch(imgUrl);
+          if (!resp.ok) continue;
+          const blob = await resp.blob();
+          const seq = String(i + 1).padStart(2, '0');
+          files.push(new File([blob], `${seq}_${m.modelCode || 'model'}.jpg`, { type: blob.type || 'image/jpeg' }));
+        }
+        if (!files.length) { setStatus('Failed to prepare images'); return; }
+        if (!navigator.canShare({ files })) {
+          setStatus("This browser can't share files directly — use Download");
+          return;
+        }
+        await navigator.share({ files });
+        setStatus('');
+      } catch (e) {
+        if (e && e.name === 'AbortError') { setStatus(''); return; } // user closed the share sheet
+        console.error('shareSelectedImagesWeb failed:', e);
+        setStatus('Failed to share images');
+      }
     };
 
     window.copyPublicId = function() {
