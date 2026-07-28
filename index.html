@@ -1798,8 +1798,8 @@
             inp.removeAttribute('maxlength');
             phoneIcon.classList.add('hidden');
             emailIcon.classList.remove('hidden');
-            label.textContent = 'Email (Admin)';
-            hint.innerHTML = '<span class="text-[#e85d3a] font-bold">🔑 Admin</span>';
+            label.textContent = 'Email';
+            hint.textContent = '';
           } else {
             // Phone mode (user) — digits only, max 11
             inp.value = val.replace(/[^0-9]/g, '').slice(0, 11);
