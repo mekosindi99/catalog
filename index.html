@@ -5460,14 +5460,18 @@ service cloud.firestore {
         seasons: parseLines('settings-catalog-seasons'),
         genders: parseLines('settings-catalog-genders'),
       };
+      const statusEl = document.getElementById('catalog-options-save-status');
+      if (statusEl) { statusEl.textContent = 'Saving...'; statusEl.style.color = '#9ca3af'; }
       try {
         if (window._fbSaveCatalogOptions) await window._fbSaveCatalogOptions(data);
         window._catalogOptions = data;
         populateCatalogOptionSelects();
         showToast('Catalog fields saved ✓', 'success');
+        if (statusEl) { statusEl.textContent = '✓ Saved'; statusEl.style.color = '#16a34a'; }
       } catch (e) {
         console.error('saveCatalogOptions failed:', e);
         showToast('Failed to save catalog fields', 'error');
+        if (statusEl) { statusEl.textContent = '✗ Failed: ' + (e && e.message ? e.message : e); statusEl.style.color = '#dc2626'; }
       }
     };
 
@@ -7070,11 +7074,14 @@ service cloud.firestore {
             <textarea id="settings-catalog-genders" rows="3" placeholder="Girls&#10;Boys&#10;Unisex"
               class="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition"></textarea>
           </div>
-          <button onclick="saveCatalogOptions()"
-            class="h-10 px-4 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold hover:bg-[#2d2d4e] transition-colors flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-            Save Catalog Fields
-          </button>
+          <div class="flex items-center gap-3">
+            <button onclick="saveCatalogOptions()"
+              class="h-10 px-4 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold hover:bg-[#2d2d4e] transition-colors flex items-center gap-1.5 shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              Save Catalog Fields
+            </button>
+            <span id="catalog-options-save-status" class="text-xs font-bold"></span>
+          </div>
 
         </div>
 
