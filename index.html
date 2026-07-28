@@ -6437,9 +6437,12 @@ service cloud.firestore {
       return window.shareSelectedImagesWeb(models);
     };
 
+    // Same behavior as the per-folder "Gallery - download" button: saves each selected image
+    // straight to the device's photo gallery (native MediaStore save inside the Android app,
+    // or a folder picker + individual file writes in the browser) — no ZIP step.
     window.downloadSelectedFromBar = async function() {
       if (!selectedIds.size) return;
-      await downloadSelected('all', 'jpg');
+      await dlAsGallery('all');
     };
 
     // ── Round rect helper ──
