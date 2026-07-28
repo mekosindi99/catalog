@@ -992,16 +992,17 @@
       border: none;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
-      opacity: 0.6;
+      opacity: 1;
       transition: opacity 0.15s, background 0.15s;
-      color: #374151;
+      color: #ef4444;
       z-index: 10;
       backdrop-filter: blur(4px);
       box-shadow: 0 1px 4px rgba(0,0,0,0.12);
     }
+    .folder-menu-btn svg path { stroke-width: 3; }
     .folder-card:hover .folder-menu-btn,
     .folder-menu-btn.active { opacity: 1; background: rgba(255,255,255,0.95); }
-    .folder-menu-btn:hover { background: #f3f4f6 !important; }
+    .folder-menu-btn:hover { background: #fef2f2 !important; }
 
     .folder-context-menu {
       position: fixed;
@@ -3579,6 +3580,43 @@ service cloud.firestore {
     window.goHome = function() { showHomeView(); };
 
     // ── Folder rendering ──
+    // Folders with more than 4 photos cycle through them 4-at-a-time on a timer (1,2,3,4 →
+    // 5,6,7,8 → ... → wraps back to 1,2,3,4), so the preview isn't stuck showing only the
+    // first 4 forever. Keyed by folder id so each folder's rotation position persists
+    // across re-renders until the page reloads.
+    const _folderPreviewOffset = {};
+    function getFolderPreviewModels(folder) {
+      const eligible = allModels.filter(m => m.folderId === folder.id && m.imageUrl);
+      if (eligible.length <= 4) return eligible;
+      const offset = ((_folderPreviewOffset[folder.id] || 0) % eligible.length + eligible.length) % eligible.length;
+      return eligible.slice(offset).concat(eligible.slice(0, offset)).slice(0, 4);
+    }
+    function folderCollageInnerHTML(models) {
+      return models.map(m => {
+        const src = optimizedCloudinaryUrl(m.imageUrl, m.imageSize);
+        return `<div class="collage-cell"><img src="${src}" alt="${escapeHtml(m.modelCode||'')}" loading="lazy" /></div>`;
+      }).join('');
+    }
+    let _folderPreviewTimer = null;
+    function startFolderPreviewRotation() {
+      if (_folderPreviewTimer) return; // only one interval, ever
+      _folderPreviewTimer = setInterval(() => {
+        if (currentFolderId !== null || isTrashView) return; // only rotate on the home/folders view
+        allFolders.forEach(folder => {
+          if (folder.deleted) return;
+          const eligible = allModels.filter(m => m.folderId === folder.id && m.imageUrl);
+          if (eligible.length <= 4) return;
+          _folderPreviewOffset[folder.id] = ((_folderPreviewOffset[folder.id] || 0) + 4) % eligible.length;
+          const card = document.querySelector(`.folder-card[data-folder-id="${CSS.escape(folder.id)}"]`);
+          const collage = card && card.querySelector('.folder-preview-collage');
+          if (!collage) return;
+          const models = getFolderPreviewModels(folder);
+          collage.setAttribute('data-count', models.length);
+          collage.innerHTML = folderCollageInnerHTML(models);
+        });
+      }, 3500);
+    }
+
     function folderCardHTML(folder) {
       const color = folder.color || "#e85d3a";
       const bgAlpha = color + "22";
@@ -3589,8 +3627,8 @@ service cloud.firestore {
       const safeFolderName = escapeHtml(folder.name || '');
       const safeFolderId = escapeHtml(folder.id);
 
-      // Build image collage (up to 4 images)
-      const previewModels = allModels.filter(m => m.folderId === folder.id && m.imageUrl).slice(0, 4);
+      // Build image collage (up to 4 images, rotating over time if the folder has more)
+      const previewModels = getFolderPreviewModels(folder);
       let previewHTML;
       if (previewModels.length === 0) {
         // No images yet → show folder icon
@@ -3610,7 +3648,7 @@ service cloud.firestore {
       return `
         <div class="folder-card" style="--folder-color:${color}" data-folder-id="${safeFolderId}">
           <button class="folder-menu-btn" data-folder-id="${safeFolderId}" title="Options">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/>
             </svg>
           </button>
@@ -3680,6 +3718,7 @@ service cloud.firestore {
           if (folderId) window.openFolderCtxMenu(e, folderId);
         });
       });
+      startFolderPreviewRotation();
     }
 
     // ── Trash rendering ──
