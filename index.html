@@ -3596,6 +3596,9 @@ service cloud.firestore {
       // check (window._currentUserAllowedFolders may still be undefined/stale).
       // Once the check finishes, onAuthStateChanged will call renderFolders() again.
       if (window._awaitingUserCheck) return;
+      // Keep the advanced-search age brackets in step with the catalog: this runs on every
+      // Firestore snapshot, so the list is correct even if the panel was opened while empty.
+      populateAdvSearchOptions();
       const grid = document.getElementById("folders-grid");
       const empty = document.getElementById("folders-empty");
       // Only show non-deleted folders
@@ -5373,18 +5376,32 @@ service cloud.firestore {
     // Parses a stored age tag like "6y_12y" or "3m_9m" into a numeric range in months
     // (so mixed-unit comparisons — e.g. "6m_2y" — work on one common scale).
     function parseAgeTagMonths(tag) {
-      const toMonths = (num, unit) => unit.toLowerCase() === 'y' ? num * 12 : num;
-      const m = (tag || '').match(/^(\d+)([my])_(\d+)([my])$/i);
+      // Normalise the many shapes age tags have been saved in over time: spelled-out units
+      // ("2 years"), spaces, and en-dash/hyphen separators all collapse to "<n><m|y>_<n><m|y>".
+      const s = (tag || '')
+        .toLowerCase()
+        .replace(/years?/g, 'y')
+        .replace(/months?/g, 'm')
+        .replace(/[\s]/g, '')
+        .replace(/[–—-]/g, '_');
+      const toMonths = (num, unit) => unit === 'y' ? num * 12 : num;
+      const m = s.match(/^(\d+)([my])_(\d+)([my])$/);
       if (m) {
         const from = toMonths(parseInt(m[1], 10), m[2]);
         const to   = toMonths(parseInt(m[3], 10), m[4]);
         return { from: Math.min(from, to), to: Math.max(from, to) };
       }
       // Legacy tags saved before the m/y unit suffix existed — plain "6_12" meant years.
-      const l = (tag || '').match(/^(\d+)_(\d+)$/);
+      const l = s.match(/^(\d+)_(\d+)$/);
       if (l) {
         const from = parseInt(l[1], 10) * 12, to = parseInt(l[2], 10) * 12;
         return { from: Math.min(from, to), to: Math.max(from, to) };
+      }
+      // Single value, e.g. "3y" or "18m".
+      const one = s.match(/^(\d+)([my])$/);
+      if (one) {
+        const v = toMonths(parseInt(one[1], 10), one[2]);
+        return { from: v, to: v };
       }
       return null;
     }
@@ -5451,6 +5468,9 @@ service cloud.firestore {
         if (values.includes(current)) sel.value = current;
       });
     }
+    // Exposed on window: this whole script runs inside an IIFE, so the module script below
+    // (which owns the Firestore load) can only reach these through window.
+    window.populateCatalogOptionSelects = populateCatalogOptionSelects;
 
     window.saveCatalogOptions = async function() {
       const parseLines = id => (document.getElementById(id)?.value || '')
@@ -5486,6 +5506,7 @@ service cloud.firestore {
       if (seasonEl) seasonEl.value = (opts.seasons || []).join('\n');
       if (genderEl) genderEl.value = (opts.genders || []).join('\n');
     }
+    window.fillCatalogOptionsTextareas = fillCatalogOptionsTextareas;
 
     window.runGlobalSearch = function() {
       const q = (document.getElementById('global-search-input')?.value || '').trim();
