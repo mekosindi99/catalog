@@ -1823,7 +1823,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <p class="font-bold text-amber-800 text-sm mb-1">Firebase Rules Must Be Updated First</p>
-          <p class="text-xs text-amber-700 mb-3">Open <a href="https://console.firebase.google.com/project/arrangement-97982/firestore/rules" target="_blank" class="underline font-bold">Firestore Rules</a> and copy these rules then click Publish:</p>
+          <p class="text-xs text-amber-700 mb-3">Open <a href="https://console.firebase.google.com/project/arrangement-97982/firestore/rules" target="_blank" rel="noopener noreferrer" class="underline font-bold">Firestore Rules</a> and copy these rules then click Publish:</p>
           <div class="bg-amber-900/10 rounded-lg p-3 max-w-sm">
             <pre class="text-xs text-amber-900 whitespace-pre-wrap leading-relaxed font-mono">rules_version = '2';
 service cloud.firestore {
@@ -2634,7 +2634,7 @@ service cloud.firestore {
               Copy
             </button>
           </div>
-          <a id="delete-cloudinary-link" href="https://console.cloudinary.com/console/media_library" target="_blank"
+          <a id="delete-cloudinary-link" href="https://console.cloudinary.com/console/media_library" target="_blank" rel="noopener noreferrer"
             class="mt-2 inline-block text-xs font-bold text-[#e85d3a] hover:underline">
             Open Cloudinary Media Library →
           </a>
@@ -5192,7 +5192,7 @@ service cloud.firestore {
             <div style="width:32px;height:32px;border-radius:10px;background:${color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <svg style="color:${color}" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
             </div>
-            <span style="margin-left:10px;font-size:0.82rem;font-weight:700;color:#1a1a2e;">${f.name}</span>
+            <span style="margin-left:10px;font-size:0.82rem;font-weight:700;color:#1a1a2e;">${escapeHtml(f.name || '')}</span>
           </div>`;
         }).join('');
         // Add event listeners for folder options
@@ -5238,7 +5238,9 @@ service cloud.firestore {
       if (m) return `${m[1]}${m[2]} – ${m[3]}${m[4]}`;
       const l = tag.match(/^(\d+)_(\d+)$/);
       if (l) return `${l[1]} – ${l[2]}`;
-      return tag;
+      // Unrecognized shape — this string gets inserted straight into card HTML by callers
+      // that don't escape it themselves, so escape it here rather than return it raw.
+      return escapeHtml(tag);
     }
     window.cleanAgeStr = cleanAgeStr;
     window.formatAgeTag = formatAgeTag;
@@ -7584,7 +7586,7 @@ service cloud.firestore {
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between mb-1">
-              <p class="text-xs font-bold text-gray-800 truncate">${f.name}</p>
+              <p class="text-xs font-bold text-gray-800 truncate">${escapeHtml(f.name || '')}</p>
               <span class="text-xs font-bold text-gray-500 shrink-0 ml-2">${f.count}</span>
             </div>
             <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -7619,7 +7621,7 @@ service cloud.firestore {
             <svg class="w-4.5 h-4.5" style="color:${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-xs font-bold text-gray-800">${f.name}</p>
+            <p class="text-xs font-bold text-gray-800">${escapeHtml(f.name || '')}</p>
             <p class="text-[10px] text-gray-400">${count} models${dateStr ? ' · ' + dateStr : ''}</p>
           </div>
           <div class="flex items-center gap-1.5">
@@ -8082,7 +8084,7 @@ service cloud.firestore {
                     <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:${color}22">
                       <svg class="w-3.5 h-3.5" style="color:${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                     </div>
-                    <p class="text-xs font-bold text-gray-800">${f.name}</p>
+                    <p class="text-xs font-bold text-gray-800">${escapeHtml(f.name || '')}</p>
                   </div>
                   <label class="user-toggle">
                     <input type="checkbox" data-folder-id="${f.id}" ${hasAccess ? 'checked' : ''} onchange="onFolderPermToggle('${f.id}', this.checked)">
