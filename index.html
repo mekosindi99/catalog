@@ -81,7 +81,9 @@
   </script>
   <style>
     * { font-family: 'Inter', sans-serif; }
-    body { background-color: #fdf6f0; }
+    :root { --page-bg: #fdf6f0; --folder-bg: #fdf6f0; }
+    body { background-color: var(--page-bg); }
+    #folder-interior { background-color: var(--folder-bg); }
 
     .card-img { transition: transform 0.3s ease; }
     .model-card:hover .card-img { transform: scale(1.04); }
@@ -897,9 +899,9 @@
     }
 
 
-    /* ── Folder preview collage: taller on mobile ── */
+    /* ── Folder preview: taller on mobile ── */
     @media (max-width: 639px) {
-      .folder-preview-collage { height: 130px !important; }
+      .folder-shape-wrap { height: 130px !important; }
     }
 
     /* ── Admin panel: full width on mobile ── */
@@ -950,35 +952,41 @@
     }
     .folder-card:hover::before { opacity: 1; }
 
-    .folder-icon-wrap {
-      width: 52px; height: 52px;
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 0.75rem;
+    /* ── Folder-shaped preview (tab peeking behind a rounded body) — the body holds either
+       the 4-image collage or a plain color fill when the folder is empty. ── */
+    .folder-shape-wrap {
+      position: relative;
+      width: 100%; height: 80px;
+      margin-bottom: 10px;
       transition: transform 0.22s;
     }
-    .folder-card:hover .folder-icon-wrap { transform: scale(1.08); }
-
-    /* ── Folder preview collage ── */
-    .folder-preview-collage {
-      width: 100%; height: 80px;
-      border-radius: 10px; overflow: hidden;
-      margin-bottom: 10px;
+    .folder-card:hover .folder-shape-wrap { transform: scale(1.03); }
+    .folder-shape-tab {
+      position: absolute; top: 0; left: 0;
+      width: 52%; height: 28%;
+      border-radius: 8px 10px 0 0;
+      clip-path: polygon(0% 100%, 0% 22%, 14% 0%, 100% 0%, 100% 100%);
+    }
+    .folder-shape-body {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      top: 16%;
+      border-radius: 10px;
+      overflow: hidden;
       display: grid; gap: 2px;
       background: #f0ebe7;
     }
     @media (max-width: 640px) {
-      .folder-preview-collage { height: 160px; }
+      .folder-shape-wrap { height: 160px; }
       .folder-card { border-radius: 16px; padding: 1rem; }
     }
-    .folder-preview-collage[data-count="1"] { grid-template-columns: 1fr; }
-    .folder-preview-collage[data-count="2"] { grid-template-columns: 1fr 1fr; }
-    .folder-preview-collage[data-count="3"] {
+    .folder-shape-body[data-count="1"] { grid-template-columns: 1fr; }
+    .folder-shape-body[data-count="2"] { grid-template-columns: 1fr 1fr; }
+    .folder-shape-body[data-count="3"] {
       grid-template-columns: 2fr 1fr;
       grid-template-rows: 1fr 1fr;
     }
-    .folder-preview-collage[data-count="3"] .collage-cell:first-child { grid-row: 1 / 3; }
-    .folder-preview-collage[data-count="4"] {
+    .folder-shape-body[data-count="3"] .collage-cell:first-child { grid-row: 1 / 3; }
+    .folder-shape-body[data-count="4"] {
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
     }
@@ -1465,7 +1473,7 @@
 
         <!-- 💬 Notification Message Icon — visible for all logged-in users -->
         <div id="notif-bell-wrap" onclick="toggleNotifPanel()" style="display:none; position:relative; cursor:pointer; align-items:center; justify-content:center;"
-          title="الإشعارات">
+          title="Notifications">
           <button style="width:32px;height:32px;border-radius:10px;border:none;background:#1a1a2e;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;"
             onmouseover="this.style.background='#2d2250'"
             onmouseout="this.style.background='#1a1a2e'">
@@ -1496,7 +1504,7 @@
   <div id="update-notif-banner">
     <div id="notif-banner-icon" class="notif-icon added">📦</div>
     <div class="notif-text">
-      <div id="notif-banner-title" class="notif-title">تم إضافة موديل جديد</div>
+      <div id="notif-banner-title" class="notif-title">New model added</div>
       <div id="notif-banner-sub" class="notif-sub"></div>
     </div>
     <button class="notif-close" id="notif-close-btn">✕</button>
@@ -1506,9 +1514,9 @@
   <div id="notif-popup-backdrop" onclick="closeNotifPopup()"></div>
   <div id="notif-center-popup" onclick="closeNotifPopup()">
     <div id="notif-popup-icon-wrap" class="popup-icon-wrap added">📦</div>
-    <div id="notif-popup-title" class="popup-title">تم إضافة موديل جديد</div>
+    <div id="notif-popup-title" class="popup-title">New model added</div>
     <div id="notif-popup-sub" class="popup-sub"></div>
-    <div class="popup-tap-hint">اضغط للإغلاق</div>
+    <div class="popup-tap-hint">Tap to close</div>
   </div>
 
   <!-- ══════════════ LOGIN SUMMARY NOTIFICATIONS POPUP ══════════════ -->
@@ -1519,8 +1527,8 @@
       <div class="lnp-header-left">
         <div class="lnp-header-icon">🔔</div>
         <div>
-          <div class="lnp-header-title">تحديثات جديدة</div>
-          <div id="lnp-header-sub" class="lnp-header-sub">تغييرات منذ آخر زيارة</div>
+          <div class="lnp-header-title">New Updates</div>
+          <div id="lnp-header-sub" class="lnp-header-sub">Changes since your last visit</div>
         </div>
       </div>
       <button class="lnp-close-btn" onclick="closeLoginNotifPopup()">✕</button>
@@ -1529,49 +1537,49 @@
     <!-- Tabs -->
     <div class="lnp-tabs">
       <button class="lnp-tab active" id="lnp-tab-all" onclick="switchLnpTab('all')">
-        الكل <span class="lnp-tab-count" id="lnp-count-all">0</span>
+        All <span class="lnp-tab-count" id="lnp-count-all">0</span>
       </button>
       <button class="lnp-tab" id="lnp-tab-added" onclick="switchLnpTab('added')">
-        ✨ جديد <span class="lnp-tab-count" id="lnp-count-added">0</span>
+        ✨ New <span class="lnp-tab-count" id="lnp-count-added">0</span>
       </button>
       <button class="lnp-tab" id="lnp-tab-updated" onclick="switchLnpTab('updated')">
-        ✏️ تعديل <span class="lnp-tab-count" id="lnp-count-updated">0</span>
+        ✏️ Updated <span class="lnp-tab-count" id="lnp-count-updated">0</span>
       </button>
       <button class="lnp-tab" id="lnp-tab-folder" onclick="switchLnpTab('folder')">
-        📁 مجلد <span class="lnp-tab-count" id="lnp-count-folder">0</span>
+        📁 Folders <span class="lnp-tab-count" id="lnp-count-folder">0</span>
       </button>
     </div>
 
     <!-- Content -->
     <div class="lnp-content">
       <div id="lnp-panel-all" class="lnp-panel active">
-        <div class="lnp-empty">لا توجد تحديثات</div>
+        <div class="lnp-empty">No updates</div>
       </div>
       <div id="lnp-panel-added" class="lnp-panel">
-        <div class="lnp-empty">لا توجد إضافات جديدة</div>
+        <div class="lnp-empty">No new additions</div>
       </div>
       <div id="lnp-panel-updated" class="lnp-panel">
-        <div class="lnp-empty">لا توجد تعديلات</div>
+        <div class="lnp-empty">No edits</div>
       </div>
       <div id="lnp-panel-folder" class="lnp-panel">
-        <div class="lnp-empty">لا توجد تغييرات في المجلدات</div>
+        <div class="lnp-empty">No folder changes</div>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="lnp-footer">
-      <button class="lnp-dismiss-btn" onclick="closeLoginNotifPopup()">فهمت ✓</button>
+      <button class="lnp-dismiss-btn" onclick="closeLoginNotifPopup()">Got it ✓</button>
     </div>
   </div>
 
   <!-- ══════════════ NOTIFICATION HISTORY PANEL ══════════════ -->
   <div id="notif-history-panel">
     <div class="notif-panel-head">
-      <span>🔔 الإشعارات</span>
-      <span id="notif-panel-clear" onclick="clearNotifHistory()">مسح الكل</span>
+      <span>🔔 Notifications</span>
+      <span id="notif-panel-clear" onclick="clearNotifHistory()">Clear All</span>
     </div>
     <div id="notif-history-list">
-      <div id="notif-empty-state">لا توجد إشعارات جديدة</div>
+      <div id="notif-empty-state">No new notifications</div>
     </div>
   </div>
 
@@ -1734,9 +1742,9 @@
       <!-- Login Card -->
       <div class="bg-white rounded-2xl shadow-xl p-6 space-y-4">
         <div>
-          <label id="gate-id-label" class="block text-xs font-bold text-gray-600 mb-1.5">رقم الموبايل أو الإيميل</label>
+          <label id="gate-id-label" class="block text-xs font-bold text-gray-600 mb-1.5">Phone Number or Email</label>
           <div class="relative">
-            <input id="gate-identifier" type="text" placeholder="07XXXXXXXXX أو example@gmail.com" dir="ltr"
+            <input id="gate-identifier" type="text" placeholder="07XXXXXXXXX or example@gmail.com" dir="ltr"
               autocomplete="username" autocapitalize="none"
               class="w-full h-11 px-3 pl-10 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition"
               oninput="gateIdentifierInput(this)"
@@ -1757,7 +1765,7 @@
           <p id="gate-type-hint" class="text-[10px] text-gray-400 mt-1 min-h-[1rem]"></p>
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-600 mb-1.5">كلمة المرور</label>
+          <label class="block text-xs font-bold text-gray-600 mb-1.5">Password</label>
           <div class="relative">
             <input id="gate-pass" type="password" placeholder="••••••••" dir="ltr"
               autocomplete="current-password"
@@ -1780,7 +1788,7 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
           </svg>
-          <span id="gate-label">دخول</span>
+          <span id="gate-label">Sign In</span>
         </button>
       </div>
 
@@ -1799,15 +1807,15 @@
             inp.removeAttribute('maxlength');
             phoneIcon.classList.add('hidden');
             emailIcon.classList.remove('hidden');
-            label.textContent = 'الإيميل (أدمن)';
+            label.textContent = 'Email (Admin)';
             hint.innerHTML = '<span class="text-[#e85d3a] font-bold">🔑 Admin</span>';
           } else {
             // Phone mode (user) — digits only, max 11
             inp.value = val.replace(/[^0-9]/g, '').slice(0, 11);
             phoneIcon.classList.remove('hidden');
             emailIcon.classList.add('hidden');
-            label.textContent = 'رقم الموبايل';
-            hint.textContent = inp.value.length > 0 ? inp.value.length + '/11 خانة' : '';
+            label.textContent = 'Phone Number';
+            hint.textContent = inp.value.length > 0 ? inp.value.length + '/11 digits' : '';
           }
         }
       </script>
@@ -2063,7 +2071,7 @@ service cloud.firestore {
           <svg class="bc-dl-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
-          <span class="bc-dl-label">معرض</span>
+          <span class="bc-dl-label">Gallery</span>
         </button>
       </div>
 
@@ -2204,7 +2212,7 @@ service cloud.firestore {
            background:#1a1a2e;border-radius:20px;padding:22px 20px 18px;width:calc(100vw - 40px);max-width:320px;
            box-shadow:0 24px 64px rgba(0,0,0,0.5);border:1.5px solid rgba(255,255,255,0.08);
            transition:transform 0.22s cubic-bezier(.34,1.56,.64,1),opacity 0.22s ease;opacity:0;">
-    <p style="color:rgba(255,255,255,0.5);font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;">اختر طريقة التنزيل</p>
+    <p style="color:rgba(255,255,255,0.5);font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;">Choose download method</p>
 
     <!-- ZIP option -->
     <button onclick="dlQuickPickZip()"
@@ -2215,8 +2223,8 @@ service cloud.firestore {
       onmouseout="this.style.background='rgba(245,158,11,0.12)'">
       <span style="width:40px;height:40px;border-radius:12px;background:rgba(245,158,11,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">🗜️</span>
       <div>
-        <p style="color:#fff;font-size:0.88rem;font-weight:800;margin-bottom:2px;">ملف ZIP</p>
-        <p style="color:rgba(255,255,255,0.45);font-size:0.72rem;">جميع الصور داخل ملف واحد</p>
+        <p style="color:#fff;font-size:0.88rem;font-weight:800;margin-bottom:2px;">ZIP File</p>
+        <p style="color:rgba(255,255,255,0.45);font-size:0.72rem;">All images in one file</p>
       </div>
     </button>
 
@@ -2229,15 +2237,15 @@ service cloud.firestore {
       onmouseout="this.style.background='rgba(22,163,74,0.12)'">
       <span style="width:40px;height:40px;border-radius:12px;background:rgba(22,163,74,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">📱</span>
       <div>
-        <p style="color:#fff;font-size:0.88rem;font-weight:800;margin-bottom:2px;">معرض الصور</p>
-        <p style="color:rgba(255,255,255,0.45);font-size:0.72rem;">تنزيل مباشر للجوال بدون ZIP</p>
+        <p style="color:#fff;font-size:0.88rem;font-weight:800;margin-bottom:2px;">Photo Gallery</p>
+        <p style="color:rgba(255,255,255,0.45);font-size:0.72rem;">Direct download to phone, no ZIP</p>
       </div>
     </button>
 
     <button onclick="closeDlQuickPick()"
       style="width:100%;margin-top:12px;padding:9px;border-radius:10px;background:rgba(255,255,255,0.06);
              border:none;color:rgba(255,255,255,0.4);font-size:0.78rem;font-weight:700;cursor:pointer;">
-      إلغاء
+      Cancel
     </button>
   </div>
 
@@ -2359,7 +2367,7 @@ service cloud.firestore {
                 class="w-full h-10 px-3 pr-9 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
               <button type="button" id="f-code-clear"
                 onclick="document.getElementById('f-code').value=''; document.getElementById('f-code').focus(); this.style.display='none';"
-                title="مسح التعبئة التلقائية"
+                title="Clear autofill"
                 style="display:none;"
                 class="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-300 hover:bg-red-400 hover:text-white text-gray-500 transition text-xs font-bold leading-none">
                 ×
@@ -2563,8 +2571,8 @@ service cloud.firestore {
           <div class="flex items-center gap-2">
             <span style="font-size:1.1rem">🚫</span>
             <div>
-              <p class="text-sm font-bold text-gray-800">استثناء من التخفيض</p>
-              <p class="text-xs text-gray-400 mt-0.5">لا يُطبَّق عليه أي تخفيض (مجلد أو عام)</p>
+              <p class="text-sm font-bold text-gray-800">Exclude from discount</p>
+              <p class="text-xs text-gray-400 mt-0.5">No discount applies to this (folder-wide or global)</p>
             </div>
           </div>
           <div style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;" onclick="(function(){var cb=document.getElementById('f-exclude-discount');cb.checked=!cb.checked;var track=document.getElementById('exclude-discount-track');var thumb=document.getElementById('exclude-discount-thumb');if(cb.checked){track.style.background='#ef4444';thumb.style.transform='translateX(20px)';}else{track.style.background='#d1d5db';thumb.style.transform='translateX(0)';}})()">
@@ -2603,19 +2611,19 @@ service cloud.firestore {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
           </svg>
         </div>
-        <h3 id="delete-modal-title" class="text-base font-bold text-gray-800 mb-1">حذف الموديل</h3>
-        <p id="delete-modal-desc" class="text-sm text-gray-500 mb-5">هل أنت متأكد؟ سيُعلَّم الموديل كـ "خلصت" ويُنقل لآخر المجلد.</p>
+        <h3 id="delete-modal-title" class="text-base font-bold text-gray-800 mb-1">Delete Model</h3>
+        <p id="delete-modal-desc" class="text-sm text-gray-500 mb-5">Are you sure? The model will be marked "Sold Out" and moved to the end of the folder.</p>
         <div class="flex gap-2">
           <button onclick="closeDeleteModal()"
             class="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
-            إلغاء
+            Cancel
           </button>
           <button id="confirm-delete-btn" onclick="confirmDelete()"
             class="flex-1 h-10 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6"/>
             </svg>
-            <span id="confirm-delete-btn-label">تأكيد</span>
+            <span id="confirm-delete-btn-label">Confirm</span>
           </button>
         </div>
       </div>
@@ -2625,8 +2633,8 @@ service cloud.firestore {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
         </div>
-        <h3 class="text-base font-bold text-gray-800 mb-1">تم ✓</h3>
-        <p class="text-sm text-gray-500 mb-4">تم وضع الموديل كـ "خلصت" وانتقل لآخر المجلد تلقائياً.</p>
+        <h3 class="text-base font-bold text-gray-800 mb-1">Done ✓</h3>
+        <p class="text-sm text-gray-500 mb-4">The model has been marked "Sold Out" and moved to the end of the folder automatically.</p>
         <div id="delete-cloudinary-block" class="hidden bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 text-left">
           <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1">Cloudinary Image ID</p>
           <div class="flex items-center gap-2">
@@ -2669,42 +2677,16 @@ service cloud.firestore {
             class="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition"
             onkeydown="if(event.key==='Enter') saveFolderModal()" />
         </div>
-        <!-- Folder Color -->
+        <!-- Folder Color — any color, not just presets -->
         <div>
           <label class="block text-xs font-bold text-gray-600 mb-2">Folder Color</label>
-          <div class="flex flex-wrap gap-2.5">
-            <label class="color-swatch" style="--c:#e85d3a">
-              <input type="radio" name="folder-color" value="#e85d3a" checked class="sr-only"/>
-              <span class="swatch-dot" style="background:#e85d3a"></span>
-            </label>
-            <label class="color-swatch" style="--c:#3b82f6">
-              <input type="radio" name="folder-color" value="#3b82f6" class="sr-only"/>
-              <span class="swatch-dot" style="background:#3b82f6"></span>
-            </label>
-            <label class="color-swatch" style="--c:#22c55e">
-              <input type="radio" name="folder-color" value="#22c55e" class="sr-only"/>
-              <span class="swatch-dot" style="background:#22c55e"></span>
-            </label>
-            <label class="color-swatch" style="--c:#a855f7">
-              <input type="radio" name="folder-color" value="#a855f7" class="sr-only"/>
-              <span class="swatch-dot" style="background:#a855f7"></span>
-            </label>
-            <label class="color-swatch" style="--c:#f59e0b">
-              <input type="radio" name="folder-color" value="#f59e0b" class="sr-only"/>
-              <span class="swatch-dot" style="background:#f59e0b"></span>
-            </label>
-            <label class="color-swatch" style="--c:#ec4899">
-              <input type="radio" name="folder-color" value="#ec4899" class="sr-only"/>
-              <span class="swatch-dot" style="background:#ec4899"></span>
-            </label>
-            <label class="color-swatch" style="--c:#00bcd4">
-              <input type="radio" name="folder-color" value="#00bcd4" class="sr-only"/>
-              <span class="swatch-dot" style="background:#00bcd4"></span>
-            </label>
-            <label class="color-swatch" style="--c:#1a1a2e">
-              <input type="radio" name="folder-color" value="#1a1a2e" class="sr-only"/>
-              <span class="swatch-dot" style="background:#1a1a2e"></span>
-            </label>
+          <div class="flex items-center gap-2">
+            <input type="color" id="folder-color-picker" value="#e85d3a"
+              oninput="document.getElementById('folder-color-hex').value=this.value"
+              class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5 bg-white">
+            <input type="text" id="folder-color-hex" value="#e85d3a" placeholder="#e85d3a"
+              oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('folder-color-picker').value=this.value"
+              class="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
           </div>
         </div>
         <!-- Hide from advanced search -->
@@ -2818,7 +2800,7 @@ service cloud.firestore {
             <span id="detail-folder-models-count" class="text-xs text-gray-700 font-semibold"></span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-xs text-gray-500 font-medium">حجم الفولدر</span>
+            <span class="text-xs text-gray-500 font-medium">Folder Size</span>
             <span id="detail-folder-size" class="text-xs text-gray-700 font-semibold">—</span>
           </div>
         </div>
@@ -2845,11 +2827,11 @@ service cloud.firestore {
         </button>
       </div>
       <div class="p-5 space-y-4">
-        <p class="text-xs text-gray-500 bg-purple-50 rounded-lg px-3 py-2">تُطبَّق على كل موديلات الفولدر. الموديلات ذات إعدادات خاصة تحتفظ بإعداداتها.</p>
+        <p class="text-xs text-gray-500 bg-purple-50 rounded-lg px-3 py-2">Applies to all models in this folder. Models with custom settings keep their own.</p>
         <!-- ── All-at-once slider ── -->
         <div class="bg-gray-50 rounded-xl px-3 py-2.5 border border-gray-200">
           <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-purple-700 w-28 shrink-0">⚡ الكل دفعة</span>
+            <span class="text-xs font-bold text-purple-700 w-28 shrink-0">⚡ All at once</span>
             <input id="ff-all-size" type="range" min="40" max="160" step="5" value="100" class="flex-1 accent-[#8b5cf6]"
               oninput="ffSetAll(this.value)" />
             <span id="ff-all-size-val" class="text-xs font-bold text-purple-600 w-10 text-right">100%</span>
@@ -2887,44 +2869,44 @@ service cloud.firestore {
         </div>
         <!-- ── Badge Shape Controls ── -->
         <div class="border-t border-gray-100 pt-3 mt-1">
-          <p class="text-xs font-bold text-gray-700 mb-3">📦 شكل الـ Badge (السعر / العمر / التخفيض)</p>
+          <p class="text-xs font-bold text-gray-700 mb-3">📦 Badge Style (Price / Age / Discount)</p>
           <!-- Padding Vertical -->
           <div class="flex items-center gap-3 mb-2">
-            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">Padding رأسي</span>
+            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">Vertical Padding</span>
             <input id="ff-badge-pad-v" type="range" min="0" max="16" step="1" value="3" class="flex-1 accent-[#8b5cf6]"
               oninput="document.getElementById('ff-badge-pad-v-val').textContent=this.value+'px';updateBadgeCSSVars()" />
             <span id="ff-badge-pad-v-val" class="text-xs font-bold text-gray-500 w-10 text-right">3px</span>
           </div>
           <!-- Padding Horizontal -->
           <div class="flex items-center gap-3 mb-2">
-            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">Padding أفقي</span>
+            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">Horizontal Padding</span>
             <input id="ff-badge-pad-h" type="range" min="0" max="32" step="1" value="10" class="flex-1 accent-[#8b5cf6]"
               oninput="document.getElementById('ff-badge-pad-h-val').textContent=this.value+'px';updateBadgeCSSVars()" />
             <span id="ff-badge-pad-h-val" class="text-xs font-bold text-gray-500 w-10 text-right">10px</span>
           </div>
           <!-- Border Radius -->
           <div class="flex items-center gap-3 mb-2">
-            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">حواف مدورة</span>
+            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">Corner Radius</span>
             <input id="ff-badge-radius" type="range" min="0" max="999" step="1" value="8" class="flex-1 accent-[#8b5cf6]"
               oninput="document.getElementById('ff-badge-radius-val').textContent=this.value+'px';updateBadgeCSSVars()" />
             <span id="ff-badge-radius-val" class="text-xs font-bold text-gray-500 w-10 text-right">8px</span>
           </div>
           <!-- Border Width -->
           <div class="flex items-center gap-3 mb-2">
-            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">سمك الحدود</span>
+            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">Border Width</span>
             <input id="ff-badge-border-w" type="range" min="0" max="6" step="1" value="0" class="flex-1 accent-[#8b5cf6]"
               oninput="document.getElementById('ff-badge-border-w-val').textContent=this.value+'px';updateBadgeCSSVars()" />
             <span id="ff-badge-border-w-val" class="text-xs font-bold text-gray-500 w-10 text-right">0px</span>
           </div>
           <!-- Border Color -->
           <div class="flex items-center gap-3 mb-2">
-            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">لون الحدود</span>
+            <span class="text-xs font-semibold text-gray-600 w-28 shrink-0">Border Color</span>
             <div class="flex-1 flex gap-2 flex-wrap">
-              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="rgba(255,255,255,0.5)" checked class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#fff;outline:2px solid #8b5cf6;outline-offset:1px;" title="أبيض شفاف"></span></label>
-              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#ffffff" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#ffffff;" title="أبيض"></span></label>
-              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#000000" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#000000;" title="أسود"></span></label>
-              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#e85d3a" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#e85d3a;" title="برتقالي"></span></label>
-              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#ffd600" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#ffd600;" title="أصفر"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="rgba(255,255,255,0.5)" checked class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#fff;outline:2px solid #8b5cf6;outline-offset:1px;" title="Transparent White"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#ffffff" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#ffffff;" title="White"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#000000" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#000000;" title="Black"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#e85d3a" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#e85d3a;" title="Orange"></span></label>
+              <label class="cursor-pointer"><input type="radio" name="badge-border-color" value="#ffd600" class="sr-only" onchange="updateBadgeCSSVars()"><span class="inline-block w-6 h-6 rounded-full border-2 border-gray-300" style="background:#ffd600;" title="Yellow"></span></label>
             </div>
           </div>
           <!-- Live preview -->
@@ -3011,7 +2993,7 @@ service cloud.firestore {
           </div>
           <div>
             <h2 class="text-base font-bold text-gray-800">Global Font Sizes</h2>
-            <p class="text-[11px] text-gray-400">تُطبَّق على جميع المجلدات</p>
+            <p class="text-[11px] text-gray-400">Applies to all folders</p>
           </div>
         </div>
         <button onclick="closeGlobalFontSizesModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
@@ -3019,11 +3001,11 @@ service cloud.firestore {
         </button>
       </div>
       <div class="p-5 space-y-4">
-        <p class="text-xs text-gray-500 bg-purple-50 rounded-lg px-3 py-2">🌍 هذه الإعدادات تُطبَّق على <strong>جميع المجلدات</strong>. المجلدات ذات إعدادات خاصة تتحكم بها هي فقط.</p>
+        <p class="text-xs text-gray-500 bg-purple-50 rounded-lg px-3 py-2">🌍 These settings apply to <strong>all folders</strong>. Folders with custom settings are controlled by those instead.</p>
         <!-- ── All-at-once slider ── -->
         <div class="bg-gray-50 rounded-xl px-3 py-2.5 border border-gray-200">
           <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-purple-700 w-28 shrink-0">⚡ الكل دفعة</span>
+            <span class="text-xs font-bold text-purple-700 w-28 shrink-0">⚡ All at once</span>
             <input id="gf-all-size" type="range" min="40" max="160" step="5" value="100" class="flex-1 accent-[#8b5cf6]"
               oninput="gfSetAll(this.value)" />
             <span id="gf-all-size-val" class="text-xs font-bold text-purple-600 w-10 text-right">100%</span>
@@ -3057,7 +3039,7 @@ service cloud.firestore {
         </div>
         <div class="flex gap-2 pt-1">
           <button onclick="resetGlobalFontSizes()" class="h-10 px-4 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors">Reset</button>
-          <button onclick="saveGlobalFontSizes()" class="flex-1 h-10 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-colors">حفظ للكل</button>
+          <button onclick="saveGlobalFontSizes()" class="flex-1 h-10 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-colors">Save for All</button>
         </div>
       </div>
     </div>
@@ -3235,11 +3217,11 @@ service cloud.firestore {
               </button>
 
               <!-- Gallery (direct to phone gallery, no ZIP) -->
-              <button class="dl-filetype-btn" id="dl-ft-gallery" onclick="selectFileType('gallery','معرض الصور','تنزيل مباشر للجوال بدون ZIP','#f0fdf4','#16a34a',this)">
+              <button class="dl-filetype-btn" id="dl-ft-gallery" onclick="selectFileType('gallery','Photo Gallery','Direct download to phone, no ZIP','#f0fdf4','#16a34a',this)">
                 <div class="dl-filetype-icon" style="background:#f0fdf4">
                   <svg class="w-5 h-5" style="color:#16a34a" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/><circle cx="8.5" cy="8.5" r="1.5" fill="#16a34a" stroke="none"/></svg>
                 </div>
-                <div class="text-left flex-1"><p class="text-sm font-bold text-gray-900">📱 معرض الصور</p><p class="text-xs text-gray-400">تنزيل مباشر بدون ZIP</p></div>
+                <div class="text-left flex-1"><p class="text-sm font-bold text-gray-900">📱 Photo Gallery</p><p class="text-xs text-gray-400">Direct download, no ZIP</p></div>
                 <svg class="dl-ft-check w-4 h-4 ml-auto flex-shrink-0 hidden" style="color:#16a34a" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
               </button>
 
@@ -3337,7 +3319,7 @@ service cloud.firestore {
   <!-- TOAST (centered, manually-closed popup) -->
   <div id="toast" class="toast">
     <span id="toast-message" class="toast-message"></span>
-    <button type="button" class="toast-close" onclick="document.getElementById('toast').classList.remove('show')" aria-label="إغلاق">&times;</button>
+    <button type="button" class="toast-close" onclick="document.getElementById('toast').classList.remove('show')" aria-label="Close">&times;</button>
   </div>
 
   <!-- LOGIN MODAL -->
@@ -3566,7 +3548,7 @@ service cloud.firestore {
 
     window.openTrashView = function() {
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        showToast("لا تملك صلاحية الوصول لسلة المحذوفات", "error");
+        showToast("You don't have permission to access the Trash", "error");
         return;
       }
       isTrashView = true;
@@ -3617,23 +3599,23 @@ service cloud.firestore {
       const safeFolderName = escapeHtml(folder.name || '');
       const safeFolderId = escapeHtml(folder.id);
 
-      // Build image collage (up to 4 images)
+      // Build image collage (up to 4 images) inside a folder-shaped silhouette (tab + body) —
+      // the body shows the collage grid when there are images, or a plain color fill when empty.
       const previewModels = allModels.filter(m => m.folderId === folder.id && m.imageUrl).slice(0, 4);
-      let previewHTML;
+      let bodyHTML;
       if (previewModels.length === 0) {
-        // No images yet → show folder icon
-        previewHTML = `<div class="folder-icon-wrap" style="background:${bgAlpha}">
-            <svg class="w-7 h-7" style="color:${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-            </svg>
-          </div>`;
+        bodyHTML = `<div class="folder-shape-body" style="background:${bgAlpha}"></div>`;
       } else {
         const cells = previewModels.map(m => {
           const src = optimizedCloudinaryUrl(m.imageUrl, m.imageSize);
           return `<div class="collage-cell"><img src="${src}" alt="${escapeHtml(m.modelCode||'')}" loading="lazy" /></div>`;
         }).join('');
-        previewHTML = `<div class="folder-preview-collage" data-count="${previewModels.length}">${cells}</div>`;
+        bodyHTML = `<div class="folder-shape-body" data-count="${previewModels.length}">${cells}</div>`;
       }
+      const previewHTML = `<div class="folder-shape-wrap">
+          <div class="folder-shape-tab" style="background:${color}"></div>
+          ${bodyHTML}
+        </div>`;
 
       return `
         <div class="folder-card" style="--folder-color:${color}" data-folder-id="${safeFolderId}">
@@ -3794,7 +3776,7 @@ service cloud.firestore {
 
     window.permanentDeleteFolder = async function(folderId, folderName) {
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        showToast("لا تملك صلاحية الحذف النهائي", "error");
+        showToast("You don't have permission to permanently delete", "error");
         return;
       }
       if (!confirm(`Permanently delete "${folderName}"? This cannot be undone.`)) return;
@@ -3809,7 +3791,7 @@ service cloud.firestore {
 
     window.emptyTrashConfirm = async function() {
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        showToast("لا تملك صلاحية الحذف النهائي", "error");
+        showToast("You don't have permission to permanently delete", "error");
         return;
       }
       const trashed = allFolders.filter(f => f.deleted);
@@ -3863,7 +3845,7 @@ service cloud.firestore {
           discountBtn.onclick = ctxOpenFolderDiscount;
         } else if (_canViewDiscount) {
           discountBtn.style.display = "";
-          discountBtn.title = "عرض فقط";
+          discountBtn.title = "View only";
           discountBtn.onclick = function() { ctxViewFolderDiscountReadOnly(); };
         } else {
           discountBtn.style.display = "none";
@@ -4017,7 +3999,7 @@ service cloud.firestore {
       // ── Calculate folder size from Cloudinary image URLs ──
       const sizeEl = document.getElementById("detail-folder-size");
       if (sizeEl) {
-        sizeEl.textContent = "جاري الحساب...";
+        sizeEl.textContent = "Calculating...";
         const imgUrls = folderModels.map(m => m.imageUrl).filter(Boolean);
         if (!imgUrls.length) {
           sizeEl.textContent = "—";
@@ -4041,13 +4023,13 @@ service cloud.firestore {
             if (measured === 0) {
               // Fallback: estimate from imageSize metadata (1080x1080 ≈ 200KB avg)
               const estimatedBytes = imgUrls.length * 200 * 1024;
-              display = _fmtBytes(estimatedBytes) + ' (تقريبي)';
+              display = _fmtBytes(estimatedBytes) + ' (approx.)';
             } else {
               // Extrapolate from sample if needed
               const avgPerImg = totalBytes / measured;
               const totalEstimate = avgPerImg * imgUrls.length;
               display = _fmtBytes(totalEstimate);
-              if (sample.length < imgUrls.length) display += ' (تقريبي)';
+              if (sample.length < imgUrls.length) display += ' (approx.)';
             }
             if (sizeEl) sizeEl.textContent = display;
           })();
@@ -4119,12 +4101,12 @@ service cloud.firestore {
       if (!fid) return;
       // Direct gallery download — all models, "all-info" style
       const models = sortModels(allModels.filter(m => m.folderId === fid && !m.soldOut));
-      if (!models.length) { showToast('لا توجد موديلات للتنزيل', 'error'); return; }
+      if (!models.length) { showToast('No models to download', 'error'); return; }
       // Temporarily set selectedIds to this folder's models
       const prevSelected = new Set(selectedIds);
       selectedIds = new Set(models.map(m => m.id));
       try {
-        showToast(`📱 جاري تنزيل ${models.length} صورة...`, 'success');
+        showToast(`📱 Downloading ${models.length} images...`, 'success');
         await dlAsGallery('all');
       } finally {
         selectedIds = prevSelected;
@@ -4143,7 +4125,7 @@ service cloud.firestore {
       openFolderDlModal(folderId);
       setTimeout(function() {
         const galleryBtn = document.getElementById('dl-ft-gallery');
-        if (galleryBtn) selectFileType('gallery','معرض الصور','تنزيل مباشر للجوال بدون ZIP','#f0fdf4','#16a34a', galleryBtn, true);
+        if (galleryBtn) selectFileType('gallery','Photo Gallery','Direct download to phone, no ZIP','#f0fdf4','#16a34a', galleryBtn, true);
       }, 120);
     };
     window.openFolderDlModal = function(folderId) {
@@ -4262,7 +4244,7 @@ service cloud.firestore {
             : `<div class="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0"><svg class="w-4 h-4 text-orange-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg></div>`
           }
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-gray-800 truncate">${safeCode}${so ? ' <span style="font-size:0.65rem;color:#e85d3a;font-weight:800;">خلصت</span>' : ''}</p>
+            <p class="text-sm font-bold text-gray-800 truncate">${safeCode}${so ? ' <span style="font-size:0.65rem;color:#e85d3a;font-weight:800;">Sold Out</span>' : ''}</p>
             <p class="text-xs text-gray-400">${fmt(m.price)} • ${safeAge} • ${fmtImageSize(m.imageSize)}</p>
           </div>
         </div>`;
@@ -4340,7 +4322,7 @@ service cloud.firestore {
       const label = document.getElementById("dl-confirm-label");
       btn.disabled = true;
       label.textContent = "Preparing...";
-      // ── FIX #3: إعادة تحميل globalFontSizes + allFolders من Firestore قبل التنزيل ──
+      // ── FIX #3: reload globalFontSizes + allFolders from Firestore before downloading ──
       try { await loadGlobalFontSizes(); } catch(e) {}
       try { await loadGlobalDiscount(); } catch(e) {}
       try {
@@ -4351,7 +4333,7 @@ service cloud.firestore {
           allFolders = window._appState.allFolders;
         }
       } catch(e) {}
-      // ── FIX #3: انتظر دورة Render كاملة قبل بدء عملية التنزيل ──
+      // ── FIX #3: wait for a full render cycle before starting the download ──
       await new Promise(r => setTimeout(r, 50));
       const prevSelected = new Set(selectedIds);
       selectedIds = new Set(dlSelectedModelIds);
@@ -4723,7 +4705,7 @@ service cloud.firestore {
       if (!ctxFolder) return;
       // Block co_admin from editing discounts
       if (!(window._canManageFoldersUI && window._canManageFoldersUI())) {
-        showToast("لا تملك صلاحية تعديل التخفيضات", "error");
+        showToast("You don't have permission to edit discounts", "error");
         return;
       }
       closeFolderCtxMenu();
@@ -4744,10 +4726,10 @@ service cloud.firestore {
       const existing = ctxFolder.discount || { type: 'percent', value: 0 };
       const val = existing.value || 0;
       if (!val) {
-        showToast('لا يوجد تخفيض على هذا المجلد', 'info');
+        showToast('No discount on this folder', 'info');
       } else {
         const typeLabel = existing.type === 'percent' ? '%' : 'IQD';
-        showToast('تخفيض المجلد: ' + val + ' ' + typeLabel + ' (عرض فقط)', 'success');
+        showToast('Folder discount: ' + val + ' ' + typeLabel + ' (view only)', 'success');
       }
     };
 
@@ -4921,7 +4903,7 @@ service cloud.firestore {
       try {
         const discountData = { type: _folderDiscountType, value: val };
         await window._fbSaveFolderDiscount(_folderDiscountTargetId, discountData);
-        // ── FIX #1: تحديث allFolders في الذاكرة فوراً حتى تعكس التنزيلات القيمة الجديدة ──
+        // ── FIX #1: update allFolders in memory immediately so downloads reflect the new value ──
         const f = allFolders.find(f => f.id === _folderDiscountTargetId);
         if (f) f.discount = discountData;
         showToast('Folder discount saved ✓', 'success');
@@ -4935,7 +4917,7 @@ service cloud.firestore {
       try {
         const discountData = { type: 'percent', value: 0 };
         await window._fbSaveFolderDiscount(_folderDiscountTargetId, discountData);
-        // ── FIX #1: تحديث allFolders في الذاكرة فوراً عند إزالة الخصم ──
+        // ── FIX #1: update allFolders in memory immediately when the discount is removed ──
         const f = allFolders.find(f => f.id === _folderDiscountTargetId);
         if (f) f.discount = discountData;
         showToast('Folder discount removed', 'success');
@@ -4949,7 +4931,7 @@ service cloud.firestore {
 
     window.openGlobalDiscountModal = function() {
       if (!(window._canManageFoldersUI && window._canManageFoldersUI())) {
-        showToast("لا تملك صلاحية تعديل التخفيضات", "error");
+        showToast("You don't have permission to edit discounts", "error");
         return;
       }
       _globalDiscountType = globalDiscount.type || 'percent';
@@ -5027,7 +5009,7 @@ service cloud.firestore {
     // ════════════════════════════════════════════════════════
     window.openGlobalFontSizesModal = function() {
       if (!(window._canManageFoldersUI && window._canManageFoldersUI())) {
-        showToast("لا تملك صلاحية تعديل أحجام الخطوط", "error");
+        showToast("You don't have permission to edit font sizes", "error");
         return;
       }
       const fields = ['age','code','price','discount'];
@@ -5088,15 +5070,15 @@ service cloud.firestore {
     // ── Folder CRUD modals ──
     window.openAddFolderModal = function() {
       if (!(window._canManageFoldersUI && window._canManageFoldersUI())) {
-        showToast("لا تملك صلاحية إضافة مجلدات", "error");
+        showToast("You don't have permission to add folders", "error");
         return;
       }
       editingFolderId = null;
       document.getElementById("folder-modal-title").textContent = "New Folder";
       document.getElementById("folder-save-label").textContent = "Create";
       document.getElementById("folder-name-input").value = "";
-      const firstColor = document.querySelector('input[name="folder-color"]');
-      if (firstColor) firstColor.checked = true;
+      document.getElementById("folder-color-picker").value = "#e85d3a";
+      document.getElementById("folder-color-hex").value = "#e85d3a";
       const hiddenCb = document.getElementById("folder-hidden-from-search");
       if (hiddenCb) hiddenCb.checked = false;
       showModal("folder-modal");
@@ -5105,7 +5087,7 @@ service cloud.firestore {
 
     function openEditFolderModal(folderId) {
       if (!(window._canManageFoldersUI && window._canManageFoldersUI())) {
-        showToast("لا تملك صلاحية تعديل المجلدات", "error");
+        showToast("You don't have permission to edit folders", "error");
         return;
       }
       const folder = allFolders.find(f => f.id === folderId);
@@ -5114,8 +5096,9 @@ service cloud.firestore {
       document.getElementById("folder-modal-title").textContent = "Edit Folder";
       document.getElementById("folder-save-label").textContent = "Update";
       document.getElementById("folder-name-input").value = folder.name;
-      const colorInput = document.querySelector(`input[name="folder-color"][value="${folder.color}"]`);
-      if (colorInput) colorInput.checked = true;
+      const folderColor = folder.color || "#e85d3a";
+      document.getElementById("folder-color-picker").value = folderColor;
+      document.getElementById("folder-color-hex").value = folderColor;
       const hiddenCb = document.getElementById("folder-hidden-from-search");
       if (hiddenCb) hiddenCb.checked = !!folder.hiddenFromSearch;
       showModal("folder-modal");
@@ -5130,8 +5113,8 @@ service cloud.firestore {
     window.saveFolderModal = async function() {
       const name = document.getElementById("folder-name-input").value.trim();
       if (!name) { showToast("Enter folder name", "error"); return; }
-      const colorChecked = document.querySelector('input[name="folder-color"]:checked');
-      const color = colorChecked ? colorChecked.value : "#e85d3a";
+      const hexInput = (document.getElementById("folder-color-hex")?.value || "").trim();
+      const color = /^#[0-9a-fA-F]{6}$/.test(hexInput) ? hexInput : "#e85d3a";
       document.getElementById("folder-save-btn").disabled = true;
       document.getElementById("folder-save-spinner").classList.remove("hidden");
       const hiddenFromSearch = document.getElementById("folder-hidden-from-search")?.checked || false;
@@ -5156,7 +5139,7 @@ service cloud.firestore {
     window.confirmDeleteFolder = async function() {
       if (!deleteFolderTarget) return;
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        showToast("لا تملك صلاحية حذف المجلدات", "error");
+        showToast("You don't have permission to delete folders", "error");
         closeDeleteFolderModal();
         return;
       }
@@ -5176,7 +5159,7 @@ service cloud.firestore {
     // ── Move to folder ──
     window.openMoveModal = function(modelId) {
       if (!(window._canEditCatalogUI && window._canEditCatalogUI())) {
-        showToast("لا تملك صلاحية نقل الموديلات", "error");
+        showToast("You don't have permission to move models", "error");
         return;
       }
       moveTargetModelId = modelId;
@@ -5304,7 +5287,7 @@ service cloud.firestore {
       const discountBadgeHTML = showDiscount
         ? `<div class="discount-badge">-${discountPct}%</div>`
         : (m.excludeFromDiscount && isAdminViewing
-            ? `<div class="discount-badge" style="background:rgba(107,114,128,0.85);box-shadow:none;font-size:0.6rem;padding:2px 6px;" title="غير مشمول بالتخفيض">🚫 غير مشمول</div>`
+            ? `<div class="discount-badge" style="background:rgba(107,114,128,0.85);box-shadow:none;font-size:0.6rem;padding:2px 6px;" title="Excluded from discount">🚫 Excluded</div>`
             : '');
       const priceHTML = showDiscount
         ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
@@ -5317,18 +5300,18 @@ service cloud.firestore {
       const safeModelCode = escapeHtml(m.modelCode || '');
       const soldOutOverlay = isSoldOut ? `
         <div class="sold-out-overlay" onclick="event.stopPropagation()">
-          <div class="sold-out-label">خلصت الموديل</div>
-          ${isAdminViewing ? `<button class="sold-out-back-btn" onclick="event.stopPropagation();markModelAvailable('${safeModelId}')">↩ رجعت</button>` : ''}
+          <div class="sold-out-label">Model Sold Out</div>
+          ${isAdminViewing ? `<button class="sold-out-back-btn" onclick="event.stopPropagation();markModelAvailable('${safeModelId}')">↩ Restored</button>` : ''}
         </div>` : '';
       // Pending-delete banner for admin only
       const safePendingBy = escapeHtml(m.pendingDeleteBy || '');
       const pendingBanner = (isPendingDelete && isAdminViewing) ? `
         <div class="pending-delete-banner">
-          <div class="pd-label">🗑️ حذفه المساعد<br><span style="opacity:0.8;font-size:0.55rem">${safePendingBy}</span></div>
+          <div class="pd-label">🗑️ Deleted by assistant<br><span style="opacity:0.8;font-size:0.55rem">${safePendingBy}</span></div>
           <div style="display:flex;flex-direction:column;gap:4px">
-            <button class="pd-btn" style="background:#1a1a2e;color:#fff;" onclick="event.stopPropagation();markModelSoldOut('${safeModelId}')">📦 خلصت</button>
-            <button class="pd-btn pd-restore" onclick="event.stopPropagation();pendingDeleteRestore('${safeModelId}')">↩ استرجاع</button>
-            <button class="pd-btn pd-confirm" onclick="event.stopPropagation();pendingDeleteConfirm('${safeModelId}','${escapeHtml(m.imageUrl||'')}')">✕ حذف نهائي</button>
+            <button class="pd-btn" style="background:#1a1a2e;color:#fff;" onclick="event.stopPropagation();markModelSoldOut('${safeModelId}')">📦 Sold Out</button>
+            <button class="pd-btn pd-restore" onclick="event.stopPropagation();pendingDeleteRestore('${safeModelId}')">↩ Restore</button>
+            <button class="pd-btn pd-confirm" onclick="event.stopPropagation();pendingDeleteConfirm('${safeModelId}','${escapeHtml(m.imageUrl||'')}')">✕ Delete Permanently</button>
           </div>
         </div>` : '';
       return `
@@ -5352,16 +5335,16 @@ service cloud.firestore {
           </div>`)}
           ${(isPendingDelete && isAdminViewing) ? '' : ((currentUser && !viewOnlyMode && window._canEditCatalogUI && window._canEditCatalogUI()) ? `
           <div class="model-actions-overlay" data-overlay="1" style="position:absolute;inset:0;z-index:20;background:rgba(0,0,0,0.5);display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;opacity:0;transition:opacity 0.2s ease;pointer-events:none;padding:0 8px;">
-            <button class="model-edit-btn" data-id="${safeModelId}" title="تعديل الموديل"
+            <button class="model-edit-btn" data-id="${safeModelId}" title="Edit Model"
               style="display:flex;align-items:center;justify-content:center;padding:7px 9px;border-radius:8px;background:rgba(255,255,255,0.95);border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
               <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
-            <button class="model-move-btn" data-id="${safeModelId}" title="نقل المجلد"
+            <button class="model-move-btn" data-id="${safeModelId}" title="Move to Folder"
               style="display:flex;align-items:center;justify-content:center;padding:7px 9px;border-radius:8px;background:rgba(255,255,255,0.95);border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
               <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
             </button>
             ${(window._canDeleteModelUI && window._canDeleteModelUI()) ? `
-            <button class="model-delete-btn" data-id="${safeModelId}" title="خلصت الموديل؟"
+            <button class="model-delete-btn" data-id="${safeModelId}" title="Mark as sold out?"
               style="display:flex;align-items:center;justify-content:center;padding:7px 9px;border-radius:8px;background:rgba(239,68,68,0.95);border:none;cursor:pointer;box-shadow:0 2px 8px rgba(239,68,68,0.35);">
               <svg style="width:15px;height:15px;" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>` : ''}
@@ -5427,7 +5410,7 @@ service cloud.firestore {
       }
     });
     // Understands plain codes ("A102") plus simple Arabic/English price & age phrases
-    // ("اقل من 20000", "اكثر من 15000", "سنتين", "6 اشهر") without needing an AI call.
+    // (e.g. Arabic phrases like "اقل من 20000"/"اكثر من 15000", or age words "سنتين"/"6 اشهر") without needing an AI call.
     function matchesSmartSearch(m, rawQuery) {
       const q = (rawQuery || '').trim().toLowerCase();
       if (!q) return true;
@@ -5970,14 +5953,14 @@ service cloud.firestore {
 
     window.openAddModal = function() {
       if (!(window._canEditCatalogUI && window._canEditCatalogUI())) {
-        showToast("لا تملك صلاحية إضافة موديلات", "error");
+        showToast("You don't have permission to add models", "error");
         return;
       }
       editingId = null;
       resetForm();
       document.getElementById("modal-title").textContent = "Add New Model";
       document.getElementById("save-label").textContent  = "Save";
-      // حفظ folderId في الـ modal مباشرة عند الفتح
+      // Save folderId directly into the modal when it opens
       const folderInput = document.getElementById("f-folder-id");
       if (folderInput) folderInput.value = currentFolderId || "";
       showModal("model-modal");
@@ -6017,7 +6000,7 @@ service cloud.firestore {
     };
     window.openEditModal = function(id) {
       if (!(window._canEditCatalogUI && window._canEditCatalogUI())) {
-        showToast("لا تملك صلاحية تعديل الموديلات", "error");
+        showToast("You don't have permission to edit models", "error");
         return;
       }
       const model = allModels.find(m => m.id === id);
@@ -6026,7 +6009,7 @@ service cloud.firestore {
       resetForm();
       document.getElementById("modal-title").textContent = "Edit Model";
       document.getElementById("save-label").textContent  = "Update";
-      // حفظ folderId في الـ modal
+      // Save folderId into the modal
       const folderInput = document.getElementById("f-folder-id");
       if (folderInput) folderInput.value = model.folderId || currentFolderId || "";
       document.getElementById("f-code").value   = model.modelCode || '';
@@ -6137,7 +6120,7 @@ service cloud.firestore {
     // ── Delete model ──
     window.openDeleteModal = function(id) {
       if (!(window._canDeleteModelUI && window._canDeleteModelUI())) {
-        showToast("لا تملك صلاحية حذف الموديلات", "error");
+        showToast("You don't have permission to delete models", "error");
         return;
       }
       const model = allModels.find(m=>m.id===id);
@@ -6148,13 +6131,13 @@ service cloud.firestore {
       const descEl  = document.getElementById("delete-modal-desc");
       const btnLbl  = document.getElementById("confirm-delete-btn-label");
       if (_role === "admin") {
-        if (titleEl) titleEl.textContent = "خلصت الموديل؟";
-        if (descEl)  descEl.textContent  = 'سيُعلَّم الموديل كـ «خلصت» وينتقل لآخر المجلد تلقائياً.';
-        if (btnLbl)  btnLbl.textContent  = "📦 خلصت";
+        if (titleEl) titleEl.textContent = "Mark as sold out?";
+        if (descEl)  descEl.textContent  = 'The model will be marked "Sold Out" and moved to the end of the folder automatically.';
+        if (btnLbl)  btnLbl.textContent  = "📦 Sold Out";
       } else {
-        if (titleEl) titleEl.textContent = "طلب حذف";
-        if (descEl)  descEl.textContent  = "سيُرسَل طلب حذف للأدمن للمراجعة.";
-        if (btnLbl)  btnLbl.textContent  = "تأكيد الطلب";
+        if (titleEl) titleEl.textContent = "Delete Request";
+        if (descEl)  descEl.textContent  = "A delete request will be sent to the admin for review.";
+        if (btnLbl)  btnLbl.textContent  = "Confirm Request";
       }
       showModal("delete-modal");
     };
@@ -6167,7 +6150,7 @@ service cloud.firestore {
     window.confirmDelete = async function() {
       if (!deleteTarget) return;
       if (!(window._canDeleteModelUI && window._canDeleteModelUI())) {
-        showToast("لا تملك صلاحية حذف الموديلات", "error");
+        showToast("You don't have permission to delete models", "error");
         closeDeleteModal();
         return;
       }
@@ -6306,7 +6289,7 @@ service cloud.firestore {
       let label = "Guest";
       if (isLoggedIn) {
         if (role === "admin") label = "Admin";
-        else if (role === "co_admin") label = "مساعد الادمن";
+        else if (role === "co_admin") label = "Co-Admin";
         else label = displayId;
       }
       if (roleLabel) roleLabel.textContent = label;
@@ -6478,7 +6461,7 @@ service cloud.firestore {
       if(!format) format='jpg';
       if(!selectedIds.size) selectAllCards();
       if(!selectedIds.size) return;
-      // ── FIX #4: إعادة تحميل globalFontSizes + globalDiscount + allFolders قبل التنزيل ──
+      // ── FIX #4: reload globalFontSizes + globalDiscount + allFolders before downloading ──
       try { await loadGlobalFontSizes(); } catch(e) {}
       try { await loadGlobalDiscount(); } catch(e) {}
       // ── Reload folder font sizes from Firestore ──
@@ -7216,33 +7199,33 @@ service cloud.firestore {
             <div class="space-y-3">
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-white/50 mb-1.5">الاسم * <span class="text-white/30">(max 32)</span></label>
+                  <label class="block text-[10px] font-bold text-white/50 mb-1.5">Name * <span class="text-white/30">(max 32)</span></label>
                   <input id="new-user-name" type="text" placeholder="e.g. Ahmed Ali" dir="auto" maxlength="32"
                     class="w-full h-9 px-3 rounded-xl bg-white/10 border border-white/10 text-white text-xs placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/50 focus:border-[#e85d3a] transition">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-white/50 mb-1.5">رقم الموبايل * <span class="text-white/30">(11 خانة)</span></label>
+                  <label class="block text-[10px] font-bold text-white/50 mb-1.5">Phone Number * <span class="text-white/30">(11 digits)</span></label>
                   <input id="new-user-phone" type="tel" placeholder="07XXXXXXXXX" dir="ltr" maxlength="11"
                     oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                     class="w-full h-9 px-3 rounded-xl bg-white/10 border border-white/10 text-white text-xs placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/50 focus:border-[#e85d3a] transition tracking-widest">
                 </div>
               </div>
               <div>
-                <label class="block text-[10px] font-bold text-white/50 mb-1.5">نوع الحساب *</label>
+                <label class="block text-[10px] font-bold text-white/50 mb-1.5">Account Type *</label>
                 <div class="grid grid-cols-2 gap-2">
                   <label class="flex items-center justify-center gap-1.5 h-9 rounded-xl bg-white/10 border border-white/10 text-white text-xs font-bold cursor-pointer transition has-[:checked]:bg-[#e85d3a] has-[:checked]:border-[#e85d3a]">
                     <input type="radio" name="new-user-role" id="new-user-role-user" value="user" checked class="sr-only">
-                    👤 يوزر عادي
+                    👤 Regular User
                   </label>
                   <label class="flex items-center justify-center gap-1.5 h-9 rounded-xl bg-white/10 border border-white/10 text-white text-xs font-bold cursor-pointer transition has-[:checked]:bg-[#e85d3a] has-[:checked]:border-[#e85d3a]">
                     <input type="radio" name="new-user-role" id="new-user-role-coadmin" value="co_admin" class="sr-only">
-                    🛠️ مساعد الادمن
+                    🛠️ Co-Admin
                   </label>
                 </div>
               </div>
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[10px] font-bold text-white/50 mb-1.5">كلمة المرور *</label>
+                  <label class="block text-[10px] font-bold text-white/50 mb-1.5">Password *</label>
                   <div class="relative">
                     <input id="new-user-pass" type="password" placeholder="min 6 characters" dir="ltr"
                       class="w-full h-9 px-3 pr-9 rounded-xl bg-white/10 border border-white/10 text-white text-xs placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/50 focus:border-[#e85d3a] transition">
@@ -7322,12 +7305,12 @@ service cloud.firestore {
               <button onclick="deleteSessionsFiltered('active')"
                 class="flex-1 h-8 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold hover:bg-green-100 transition-colors flex items-center justify-center gap-1.5">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                حذف Active
+                Delete Active
               </button>
               <button onclick="deleteSessionsFiltered('all')"
                 class="flex-1 h-8 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[10px] font-bold hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                حذف الكل
+                Delete All
               </button>
             </div>
           </div>
@@ -7352,6 +7335,46 @@ service cloud.firestore {
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                 Save
               </button>
+            </div>
+          </div>
+
+          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 mt-6">Appearance</p>
+          <div class="bg-gray-50 rounded-2xl p-4 space-y-4">
+            <div>
+              <p class="text-xs font-black text-gray-600 mb-2">Page Background Color</p>
+              <p class="text-[11px] text-gray-400 mb-2">Applies everywhere — the Home/folders view and everything else.</p>
+              <div class="flex items-center gap-2">
+                <input id="settings-page-bg" type="color" value="#fdf6f0"
+                  oninput="document.getElementById('settings-page-bg-hex').value=this.value"
+                  class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5 bg-white">
+                <input id="settings-page-bg-hex" type="text" value="#fdf6f0" placeholder="#fdf6f0"
+                  oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('settings-page-bg').value=this.value"
+                  class="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
+              </div>
+            </div>
+            <div>
+              <p class="text-xs font-black text-gray-600 mb-2">Folder Interior Background Color</p>
+              <p class="text-[11px] text-gray-400 mb-2">Just the area shown while you're inside a folder (breadcrumb + models grid).</p>
+              <div class="flex items-center gap-2">
+                <input id="settings-folder-bg" type="color" value="#fdf6f0"
+                  oninput="document.getElementById('settings-folder-bg-hex').value=this.value"
+                  class="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5 bg-white">
+                <input id="settings-folder-bg-hex" type="text" value="#fdf6f0" placeholder="#fdf6f0"
+                  oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)) document.getElementById('settings-folder-bg').value=this.value"
+                  class="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="saveAppearanceColors()"
+                class="h-10 px-4 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold hover:bg-[#2d2d4e] transition-colors flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                Save Colors
+              </button>
+              <button onclick="resetAppearanceColors()"
+                class="h-10 px-4 rounded-xl border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-100 transition-colors">
+                Reset to Default
+              </button>
+              <span id="appearance-save-status" class="text-xs font-bold"></span>
             </div>
           </div>
 
@@ -7394,7 +7417,7 @@ service cloud.firestore {
     <div class="modal-enter bg-white rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[92vh]">
       <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 shrink-0">
         <div>
-          <h2 class="text-sm font-bold text-gray-800">⚙️ صلاحيات المستخدم</h2>
+          <h2 class="text-sm font-bold text-gray-800">⚙️ User Permissions</h2>
           <p id="perms-user-email-label" class="text-xs text-gray-400 mt-0.5"></p>
         </div>
         <button onclick="closeUserPermsModal()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
@@ -7404,25 +7427,25 @@ service cloud.firestore {
       <div class="overflow-y-auto flex-1 min-h-0">
         <!-- Features Section -->
         <div class="px-5 pt-4 pb-3">
-          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">🔑 المميزات والصلاحيات</p>
+          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">🔑 Features & Permissions</p>
           <div id="perms-features-list" class="space-y-2">
             <p class="text-xs text-gray-400 text-center py-4">Loading...</p>
           </div>
         </div>
         <!-- Folders Section — only shown for regular users -->
         <div id="perms-folders-section" class="hidden px-5 pb-5 border-t border-gray-100 pt-4">
-          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">📂 وصول المجلدات</p>
-          <p class="text-xs text-gray-400 mb-3">تحكم في أي مجلدات يستطيع المستخدم رؤيتها.</p>
+          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">📂 Folder Access</p>
+          <p class="text-xs text-gray-400 mb-3">Control which folders this user can see.</p>
           <div id="perms-folders-list" class="space-y-2">
             <p class="text-xs text-gray-400 text-center py-4">Loading folders...</p>
           </div>
         </div>
       </div>
       <div class="p-4 border-t border-gray-100 flex gap-2 shrink-0">
-        <button onclick="closeUserPermsModal()" class="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">إلغاء</button>
+        <button onclick="closeUserPermsModal()" class="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
         <button id="save-user-perms-btn" onclick="saveUserPerms()" class="flex-1 h-10 rounded-xl bg-[#1a1a2e] text-white text-sm font-bold hover:bg-[#2d2d4e] transition-colors flex items-center justify-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-          حفظ الصلاحيات
+          Save Permissions
         </button>
       </div>
     </div>
@@ -7497,7 +7520,7 @@ service cloud.firestore {
       // Admin Panel is restricted to super admin ONLY — co_admin has no access
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
         if (window._appState && window._appState.showToast)
-          window._appState.showToast("لا تملك صلاحية فتح لوحة الإدارة", "error");
+          window._appState.showToast("You don't have permission to open the Admin Panel", "error");
         return;
       }
       const panel = document.getElementById('admin-panel');
@@ -7678,17 +7701,17 @@ service cloud.firestore {
 
       // Only the super Admin can create new user accounts (incl. co_admin accounts)
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        errEl.textContent = 'لا تملك صلاحية إنشاء حسابات';
+        errEl.textContent = "You don't have permission to create accounts";
         return;
       }
 
       // Validations
-      if (!name) { errEl.textContent = 'الاسم مطلوب'; return; }
-      if (name.length > 32) { errEl.textContent = 'الاسم لا يتجاوز 32 حرف'; return; }
-      if (!phone) { errEl.textContent = 'رقم الموبايل مطلوب'; return; }
-      if (phone.length !== 11) { errEl.textContent = 'رقم الموبايل يجب أن يكون 11 خانة بالضبط'; return; }
-      if (!pass) { errEl.textContent = 'كلمة المرور مطلوبة'; return; }
-      if (pass.length < 6) { errEl.textContent = 'كلمة المرور 6 أحرف على الأقل'; return; }
+      if (!name) { errEl.textContent = 'Name is required'; return; }
+      if (name.length > 32) { errEl.textContent = 'Name must be 32 characters or fewer'; return; }
+      if (!phone) { errEl.textContent = 'Phone number is required'; return; }
+      if (phone.length !== 11) { errEl.textContent = 'Phone number must be exactly 11 digits'; return; }
+      if (!pass) { errEl.textContent = 'Password is required'; return; }
+      if (pass.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; return; }
 
       btn.disabled = true;
       spinner.classList.remove('hidden');
@@ -7700,7 +7723,7 @@ service cloud.firestore {
           const existing = await window._fbGetManagedUsers();
           const duplicate = existing.find(u => u.phone === phone);
           if (duplicate) {
-            errEl.textContent = 'هذا الرقم مسجل مسبقاً';
+            errEl.textContent = 'This number is already registered';
             return;
           }
         }
@@ -7732,7 +7755,7 @@ service cloud.firestore {
           });
         }
 
-        window._appState.showToast('تم إنشاء المستخدم ✓', 'success');
+        window._appState.showToast('User created ✓', 'success');
         phoneEl.value = ''; passEl.value = ''; nameEl.value = '';
         const userRadio = document.getElementById('new-user-role-user');
         if (userRadio) userRadio.checked = true;
@@ -7740,8 +7763,8 @@ service cloud.firestore {
       } catch(e) {
         console.error(e);
         const msg = e.message || '';
-        if (msg.includes('EMAIL_EXISTS')) errEl.textContent = 'هذا الرقم مسجل مسبقاً';
-        else errEl.textContent = msg || 'فشل إنشاء المستخدم';
+        if (msg.includes('EMAIL_EXISTS')) errEl.textContent = 'This number is already registered';
+        else errEl.textContent = msg || 'Failed to create user';
       } finally {
         btn.disabled = false;
         spinner.classList.add('hidden');
@@ -7765,12 +7788,12 @@ service cloud.firestore {
 
     // ── Feature definitions (shared with modal) ──
     const _ADMIN_FEATURES = [
-      { key: 'canViewDiscount', icon: '💸', label: 'يرى التخفيض',      desc: 'عرض نسبة الخصم على المنتجات',        defCoAdmin: false, defUser: false },
-      { key: 'canDownload',     icon: '📥', label: 'تنزيل الصور',       desc: 'تنزيل صور المنتجات بجودة عالية',     defCoAdmin: true,  defUser: false },
-      { key: 'canAddModel',     icon: '➕', label: 'إضافة موديل',       desc: 'إضافة منتجات جديدة للكاتالوج',      defCoAdmin: true,  defUser: false },
-      { key: 'canEditModel',    icon: '✏️', label: 'تعديل موديل',       desc: 'تعديل بيانات المنتجات الموجودة',     defCoAdmin: true,  defUser: false },
-      { key: 'canDeleteModel',  icon: '🗑️', label: 'حذف موديل',        desc: 'حذف المنتجات من الكاتالوج',          defCoAdmin: true,  defUser: false },
-      { key: 'canShare',        icon: '🔗', label: 'مشاركة الكاتالوج', desc: 'مشاركة رابط الكاتالوج للمتابعة',    defCoAdmin: true,  defUser: false },
+      { key: 'canViewDiscount', icon: '💸', label: 'Can view discount', desc: 'View the discount percentage on products',        defCoAdmin: false, defUser: false },
+      { key: 'canDownload',     icon: '📥', label: 'Download images', desc: 'Download high-quality product images',     defCoAdmin: true,  defUser: false },
+      { key: 'canAddModel',     icon: '➕', label: 'Add model', desc: 'Add new products to the catalog',      defCoAdmin: true,  defUser: false },
+      { key: 'canEditModel',    icon: '✏️', label: 'Edit model', desc: 'Edit existing product data',     defCoAdmin: true,  defUser: false },
+      { key: 'canDeleteModel',  icon: '🗑️', label: 'Delete model', desc: 'Delete products from the catalog',          defCoAdmin: true,  defUser: false },
+      { key: 'canShare',        icon: '🔗', label: 'Share catalog', desc: 'Share the catalog link for viewing',    defCoAdmin: true,  defUser: false },
     ];
 
     function renderManagedUsers(users) {
@@ -7886,19 +7909,19 @@ service cloud.firestore {
           return true;
         });
       }
-      if (!targets.length) { window._appState && window._appState.showToast('لا توجد سجلات للحذف', 'error'); return; }
-      const roleLabel = roleFilter === 'all' ? 'الكل' : roleFilter === 'admin' ? 'Admin' : roleFilter === 'co_admin' ? 'Co-Admin' : 'User';
-      const modeLabel = mode === 'active' ? 'Active' : 'جميع';
-      if (!confirm(`حذف ${targets.length} سجل (${modeLabel} – ${roleLabel})؟`)) return;
+      if (!targets.length) { window._appState && window._appState.showToast('No records to delete', 'error'); return; }
+      const roleLabel = roleFilter === 'all' ? 'All' : roleFilter === 'admin' ? 'Admin' : roleFilter === 'co_admin' ? 'Co-Admin' : 'User';
+      const modeLabel = mode === 'active' ? 'Active' : 'All';
+      if (!confirm(`Delete ${targets.length} record(s) (${modeLabel} – ${roleLabel})?`)) return;
       try {
         await Promise.all(targets.map(l => window._fbDeleteLoginLog(l.id)));
         _allSessionLogs = _allSessionLogs.filter(l => !targets.find(t => t.id === l.id));
         const filtered = _sessionRoleFilter === 'all' ? _allSessionLogs : _allSessionLogs.filter(l => l.role === _sessionRoleFilter);
         renderLoginSessions(filtered);
-        window._appState && window._appState.showToast('تم الحذف ✓', 'success');
+        window._appState && window._appState.showToast('Deleted ✓', 'success');
       } catch(e) {
         console.error(e);
-        window._appState && window._appState.showToast('خطأ أثناء الحذف', 'error');
+        window._appState && window._appState.showToast('Error while deleting', 'error');
       }
     };
 
@@ -7992,14 +8015,14 @@ service cloud.firestore {
             <div class="bg-gray-50 rounded-xl p-2.5 flex items-center gap-2">
               <span class="text-base leading-none">🕐</span>
               <div>
-                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">وقت الدخول</p>
+                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Login Time</p>
                 <p class="text-[11px] font-semibold text-gray-700">${loginTime}</p>
               </div>
             </div>
             <div class="rounded-xl p-2.5 flex items-center gap-2" style="background:${isActive ? '#f0fdf4' : '#f9fafb'}">
               <span class="text-base leading-none">${isActive ? '⏱️' : '⏹️'}</span>
               <div>
-                <p class="text-[9px] font-black uppercase tracking-widest mb-0.5" style="color:${isActive ? '#16a34a' : '#9ca3af'}">مدة الجلسة</p>
+                <p class="text-[9px] font-black uppercase tracking-widest mb-0.5" style="color:${isActive ? '#16a34a' : '#9ca3af'}">Session Duration</p>
                 <p class="text-[11px] font-bold" style="color:${isActive ? '#15803d' : '#374151'}">${durationEsc}</p>
               </div>
             </div>
@@ -8029,7 +8052,7 @@ service cloud.firestore {
 
       const isCoAdmin = _editingPermsUserRole === 'co_admin';
       document.getElementById('perms-user-email-label').textContent =
-        (isCoAdmin ? '🛠️ مساعد الادمن · ' : '👤 يوزر · ') + '📱 ' + phone;
+        (isCoAdmin ? '🛠️ Co-Admin · ' : '👤 User · ') + '📱 ' + phone;
 
       // ── Render feature toggles ──
       const featList = document.getElementById('perms-features-list');
@@ -8069,7 +8092,7 @@ service cloud.firestore {
             <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200 mb-3">
               <div>
                 <p class="text-xs font-bold text-gray-800">Full Access</p>
-                <p class="text-[10px] text-gray-400">السماح بالوصول لجميع المجلدات</p>
+                <p class="text-[10px] text-gray-400">Allow access to all folders</p>
               </div>
               <label class="user-toggle" id="toggle-full-access">
                 <input type="checkbox" id="perms-full-access" ${isAllAccess ? 'checked' : ''} onchange="onFullAccessToggle(this.checked)">
@@ -8141,7 +8164,7 @@ service cloud.firestore {
       if (!_editingPermsUserId) return;
       if (!window._fbUpdateManagedUser) return;
       const btn = document.getElementById('save-user-perms-btn');
-      if (btn) { btn.disabled = true; btn.textContent = 'جاري الحفظ...'; }
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
 
       // ── Collect feature toggles ──
       const updateData = {};
@@ -8165,14 +8188,14 @@ service cloud.firestore {
 
       try {
         await window._fbUpdateManagedUser(_editingPermsUserId, updateData);
-        window._appState.showToast('✓ تم حفظ الصلاحيات', 'success');
+        window._appState.showToast('✓ Permissions saved', 'success');
         closeUserPermsModal();
         loadManagedUsers();
       } catch(e) {
         console.error(e);
-        window._appState.showToast('خطأ في حفظ الصلاحيات', 'error');
+        window._appState.showToast('Error saving permissions', 'error');
       } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> حفظ الصلاحيات'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Save Permissions'; }
       }
     };
 
@@ -8180,7 +8203,7 @@ service cloud.firestore {
     window.openDisableUserModal = function(uid, phone) {
       _disableTargetUserId = uid;
       _disableTargetUserEmail = phone;
-      document.getElementById('delete-user-msg').textContent = `"${phone}" سيتم تعطيله ولن يتمكن من الدخول. يمكنك إعادة تفعيله في أي وقت.`;
+      document.getElementById('delete-user-msg').textContent = `"${phone}" will be disabled and won't be able to log in. You can re-enable them anytime.`;
       const modal = document.getElementById('delete-user-modal');
       modal.style.display = 'flex';
       modal.classList.remove('hidden');
@@ -8196,7 +8219,7 @@ service cloud.firestore {
     window.confirmDisableUser = async function() {
       if (!_disableTargetUserId) return;
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        window._appState.showToast('لا تملك صلاحية تعطيل المستخدمين', 'error');
+        window._appState.showToast("You don't have permission to disable users", 'error');
         closeDeleteUserModal();
         return;
       }
@@ -8223,17 +8246,17 @@ service cloud.firestore {
       try {
         const newValue = !currentValue;
         await window._fbUpdateManagedUser(uid, { canViewDiscount: newValue });
-        window._appState.showToast(newValue ? 'تم السماح بعرض التخفيضات ✓' : 'تم إلغاء عرض التخفيضات', 'success');
+        window._appState.showToast(newValue ? 'Discount viewing enabled ✓' : 'Discount viewing disabled', 'success');
         loadManagedUsers();
       } catch(e) {
         console.error(e);
-        window._appState.showToast('خطأ في تحديث الصلاحية', 'error');
+        window._appState.showToast('Error updating permission', 'error');
       }
     };
 
     window.adminEnableUser = async function(uid) {
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        window._appState.showToast('لا تملك صلاحية تفعيل المستخدمين', 'error');
+        window._appState.showToast("You don't have permission to enable users", 'error');
         return;
       }
       if (!window._fbUpdateManagedUser) return;
@@ -8253,7 +8276,7 @@ service cloud.firestore {
     window.openDeleteUserModal = function(uid, phone) {
       _deleteTargetUserId = uid;
       document.getElementById('perm-delete-user-msg').textContent =
-        `"${phone}" سيتم حذفه نهائياً ولا يمكن الدخول مجدداً إلا بإنشاء حساب جديد.`;
+        `"${phone}" will be permanently deleted and can't log in again unless a new account is created.`;
       const modal = document.getElementById('perm-delete-user-modal');
       modal.style.display = 'flex';
       modal.classList.remove('hidden');
@@ -8268,7 +8291,7 @@ service cloud.firestore {
     window.confirmPermDeleteUser = async function() {
       if (!_deleteTargetUserId) return;
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
-        window._appState.showToast('لا تملك صلاحية حذف المستخدمين', 'error');
+        window._appState.showToast("You don't have permission to delete users", 'error');
         closePermDeleteUserModal();
         return;
       }
@@ -8449,8 +8472,8 @@ service cloud.firestore {
       const label    = document.getElementById("gate-label");
       err.textContent = "";
 
-      if (!rawInput) { err.textContent = "أدخل رقم الموبايل أو الإيميل"; return; }
-      if (!pass)     { err.textContent = "أدخل كلمة المرور"; return; }
+      if (!rawInput) { err.textContent = "Enter your phone number or email"; return; }
+      if (!pass)     { err.textContent = "Enter your password"; return; }
 
       const isEmail = rawInput.includes('@');
       let email;
@@ -8461,26 +8484,26 @@ service cloud.firestore {
       } else {
         // User login — phone number
         const phone = rawInput.replace(/[^0-9]/g, '');
-        if (phone.length !== 11) { err.textContent = "رقم الموبايل يجب أن يكون 11 خانة"; return; }
+        if (phone.length !== 11) { err.textContent = "Phone number must be 11 digits"; return; }
         email = phone + "@catalog.app";
       }
 
       btn.disabled = true;
       spinner.classList.remove("hidden");
-      label.textContent = "جاري الدخول...";
+      label.textContent = "Signing in...";
 
       try {
         await setPersistence(auth, browserLocalPersistence);
         await signInWithEmailAndPassword(auth, email, pass);
-        S.showToast("أهلاً ✓", "success");
+        S.showToast("Welcome ✓", "success");
         tryShowInitialView();
       } catch(e) {
         err.textContent = isEmail
-          ? "الإيميل أو كلمة المرور غير صحيحة"
-          : "رقم الموبايل أو كلمة المرور غير صحيحة";
+          ? "Incorrect email or password"
+          : "Incorrect phone number or password";
         btn.disabled = false;
         spinner.classList.add("hidden");
-        label.textContent = "دخول";
+        label.textContent = "Sign In";
       }
     };
     window._fbLogout = async function() { await window._fbEndLoginSession(); await signOut(auth); S.showToast("Signed out","success"); };
@@ -8533,12 +8556,12 @@ service cloud.firestore {
 
     // ── Save model ──
     window._fbSave = async function(data, eid) {
-      // حفظ folderId قبل أي استدعاء قد يُغير الـ state
+      // Save folderId before any call that might change state
       const savedFolderId = data.folderId;
       data.updatedAt = serverTimestamp();
       if(eid){
         await updateDoc(doc(db,"models",eid),data);
-        // تحديث allModels في الذاكرة فوراً
+        // Update allModels in memory immediately
         const idx = S.allModels.findIndex(m => m.id === eid);
         if (idx !== -1) {
           S.allModels[idx] = { ...S.allModels[idx], ...data, updatedAt: Date.now() };
@@ -8548,14 +8571,14 @@ service cloud.firestore {
       else{
         data.createdAt=serverTimestamp();
         const ref = await addDoc(collection(db,"models"),data);
-        // إضافة النموذج الجديد لـ allModels في الذاكرة فوراً
+        // Add the new model to allModels in memory immediately
         const newModel = { id: ref.id, ...data, folderId: savedFolderId, createdAt: Date.now(), updatedAt: Date.now() };
         S.allModels.push(newModel);
         S.showToast("Added ✓","success");
       }
       window.closeModal();
       S.setSaving(false);
-      // إعادة رسم الـ grid — نستخدم savedFolderId لأن currentFolderId قد تغير
+      // Re-render the grid — use savedFolderId since currentFolderId may have changed
       if (savedFolderId && S.currentFolderId === savedFolderId) {
         S.applyFilters();
       } else if (S.currentFolderId) {
@@ -8570,7 +8593,7 @@ service cloud.firestore {
         const isCoAdmin = window._currentUserRole === "co_admin";
         if (isCoAdmin) {
           // co_admin: soft-delete — mark as pendingDelete, admin will review
-          const whoDeleted = (window._currentUserEmail || '').replace('@catalog.app','') || 'مساعد';
+          const whoDeleted = (window._currentUserEmail || '').replace('@catalog.app','') || 'Assistant';
           await updateDoc(doc(db,"models",target.id), {
             pendingDelete: true,
             pendingDeleteBy: whoDeleted,
@@ -8604,8 +8627,8 @@ service cloud.firestore {
           pendingDeleteAt: null,
           updatedAt: serverTimestamp()
         });
-        S.showToast("تم تحديد الموديل كـ خلصت ✓", "success");
-      } catch(e) { S.showToast("خطأ أثناء التحديث","error"); }
+        S.showToast("Model marked as sold out ✓", "success");
+      } catch(e) { S.showToast("Error while updating","error"); }
     };
 
     window.markModelAvailable = async function(modelId) {
@@ -8614,8 +8637,8 @@ service cloud.firestore {
           soldOut: false,
           updatedAt: serverTimestamp()
         });
-        S.showToast("↩ رجع الموديل للمتاح ✓", "success");
-      } catch(e) { S.showToast("خطأ أثناء التحديث","error"); }
+        S.showToast("↩ Model restored to available ✓", "success");
+      } catch(e) { S.showToast("Error while updating","error"); }
     };
 
     // ── Pending Delete: Admin actions ──
@@ -8626,19 +8649,19 @@ service cloud.firestore {
           pendingDeleteBy: null,
           pendingDeleteAt: null
         });
-        S.showToast("تم استرجاع الموديل ✓", "success");
-      } catch(e) { S.showToast("خطأ أثناء الاسترجاع","error"); }
+        S.showToast("Model restored ✓", "success");
+      } catch(e) { S.showToast("Error while restoring","error"); }
     };
 
     window.pendingDeleteConfirm = async function(modelId, imageUrl) {
-      if (!confirm("حذف نهائي؟ لا يمكن التراجع")) return;
+      if (!confirm("Delete permanently? This cannot be undone")) return;
       try {
         await deleteDoc(doc(db,"models",modelId));
-        S.showToast("تم الحذف النهائي ✓","success");
+        S.showToast("Permanently deleted ✓","success");
         function getPid(url){if(!url||!url.includes("res.cloudinary.com"))return null;const a=url.split("/upload/")[1];if(!a)return null;const p=a.split("/").filter(p=>!/^v\d+$/.test(p)&&!p.includes(","));const l=p[p.length-1]||"";return l.replace(/\.[a-zA-Z0-9]+$/,"");}
         const pid=getPid(imageUrl);
-        if(pid) S.showToast("احذف الصورة من Cloudinary: "+pid,"success");
-      } catch(e) { S.showToast("خطأ أثناء الحذف","error"); }
+        if(pid) S.showToast("Delete the image from Cloudinary: "+pid,"success");
+      } catch(e) { S.showToast("Error while deleting","error"); }
     };
 
     // ── Move model to folder ──
@@ -8689,7 +8712,7 @@ service cloud.firestore {
       await updateDoc(doc(db,"folders",folderId), { fontSizes: fontSizes, updatedAt: serverTimestamp() });
     };
 
-    // ── FIX #5: دالة جلب جميع الفولدرات مباشرة من Firestore (كانت مُستدعاة لكن غير معرّفة!) ──
+    // ── FIX #5: fetch all folders directly from Firestore (was called but never defined!) ──
     window._fbGetAllFolders = async function() {
       try {
         const snap = await getDocsTop(query(collection(db, "folders"), orderBy("updatedAt", "desc")));
@@ -8777,7 +8800,7 @@ service cloud.firestore {
               window._awaitingUserCheck = false;
               await signOut(auth);
               const gateErr = document.getElementById("gate-error");
-              if (gateErr) gateErr.textContent = "تم تعطيل حسابك. تواصل مع الإدارة.";
+              if (gateErr) gateErr.textContent = "Your account has been disabled. Contact the administrator.";
               const gate = document.getElementById("login-gate");
               if (gate) gate.style.display = "flex";
               return;
@@ -8799,7 +8822,7 @@ service cloud.firestore {
             window._awaitingUserCheck = false;
             await signOut(auth);
             const gateErr = document.getElementById("gate-error");
-            if (gateErr) gateErr.textContent = "تم حذف حسابك. تواصل مع الإدارة.";
+            if (gateErr) gateErr.textContent = "Your account has been deleted. Contact the administrator.";
             const gate = document.getElementById("login-gate");
             if (gate) gate.style.display = "flex";
             return;
@@ -8814,7 +8837,7 @@ service cloud.firestore {
             window._awaitingUserCheck = false;
             await signOut(auth);
             const gateErr = document.getElementById("gate-error");
-            if (gateErr) gateErr.textContent = "رفض الوصول. تواصل مع الإدارة.";
+            if (gateErr) gateErr.textContent = "Access denied. Contact the administrator.";
             const gate = document.getElementById("login-gate");
             if (gate) gate.style.display = "flex";
             return;
@@ -8921,7 +8944,7 @@ service cloud.firestore {
       const el = document.getElementById(panelId);
       if (!el) return;
       if (!items.length) {
-        el.innerHTML = '<div class="lnp-empty">لا توجد تحديثات في هذا القسم</div>';
+        el.innerHTML = '<div class="lnp-empty">No updates in this section</div>';
         return;
       }
       const icons = { added:'📦', updated:'✏️', removed:'🗑️', folder:'📁' };
@@ -8933,7 +8956,7 @@ service cloud.firestore {
           <div class="lnp-item-icon ${iconType}">${icons[iconType] || '🔔'}</div>
           <div style="flex:1;min-width:0">
             <div class="lnp-item-name">${safeName}</div>
-            <div class="lnp-item-meta">${safeFolder ? 'في "' + safeFolder + '"' : (item.kind === 'folder' ? 'مجلد' : '')}</div>
+            <div class="lnp-item-meta">${safeFolder ? 'in "' + safeFolder + '"' : (item.kind === 'folder' ? 'Folder' : '')}</div>
           </div>
         </div>`;
       }).join('');
@@ -8955,7 +8978,7 @@ service cloud.firestore {
 
       // Sub title
       const sub = document.getElementById('lnp-header-sub');
-      if (sub) sub.textContent = `${items.length} تغيير منذ آخر زيارة`;
+      if (sub) sub.textContent = `${items.length} change(s) since your last visit`;
 
       // Render panels
       _renderLnpPanel('lnp-panel-all',     items);
@@ -8975,9 +8998,9 @@ service cloud.firestore {
       // Also add all to notification history
       items.forEach(item => {
         const iconType = item.kind === 'folder' ? 'folder' : item.type;
-        const titles = { added: 'موديل جديد', updated: 'تعديل', removed: 'حُذف', folder: 'تغيير مجلد' };
+        const titles = { added: 'New model', updated: 'Updated', removed: 'Removed', folder: 'Folder change' };
         _addNotifToHistory(iconType, titles[iconType] + ': ' + item.name,
-          item.folderName ? 'في "' + item.folderName + '"' : '');
+          item.folderName ? 'in "' + item.folderName + '"' : '');
       });
     }
 
@@ -9018,7 +9041,7 @@ service cloud.firestore {
           if (!updatedMs || updatedMs <= lastSeen) return;
 
           const folderName = _getFolderName(folderId);
-          const name = data.name || data.title || 'موديل';
+          const name = data.name || data.title || 'Model';
 
           if (createdMs && createdMs > lastSeen) {
             missedItems.push({ type: 'added', kind: 'model', name, folderName });
@@ -9046,7 +9069,7 @@ service cloud.firestore {
 
           if (!updatedMs || updatedMs <= lastSeen) return;
 
-          const name = data.name || 'مجلد';
+          const name = data.name || 'Folder';
           if (createdMs && createdMs > lastSeen) {
             missedItems.push({ type: 'added', kind: 'folder', name, folderName: '' });
           } else {
@@ -9177,10 +9200,10 @@ service cloud.firestore {
     // Format relative time
     function _notifTimeAgo(ts) {
       const diff = Date.now() - ts;
-      if (diff < 60000) return "الآن";
-      if (diff < 3600000) return `منذ ${Math.floor(diff/60000)} دقيقة`;
-      if (diff < 86400000) return `منذ ${Math.floor(diff/3600000)} ساعة`;
-      return `منذ ${Math.floor(diff/86400000)} يوم`;
+      if (diff < 60000) return "Just now";
+      if (diff < 3600000) return `${Math.floor(diff/60000)} min ago`;
+      if (diff < 86400000) return `${Math.floor(diff/3600000)} hr ago`;
+      return `${Math.floor(diff/86400000)} day(s) ago`;
     }
 
     // Show the center popup notification (replaces top banner)
@@ -9273,7 +9296,7 @@ service cloud.firestore {
       const list = document.getElementById("notif-history-list");
       if (!list) return;
       if (_notifHistory.length === 0) {
-        list.innerHTML = '<div id="notif-empty-state">لا توجد إشعارات جديدة</div>';
+        list.innerHTML = '<div id="notif-empty-state">No new notifications</div>';
         return;
       }
       const icons = { added:"📦", updated:"✏️", removed:"🗑️", folder:"📁" };
@@ -9332,7 +9355,7 @@ service cloud.firestore {
     // ── Find folder name by id ──
     function _getFolderName(folderId) {
       const f = S.allFolders.find(f => f.id === folderId);
-      return f ? (f.name || "مجلد") : "";
+      return f ? (f.name || "Folder") : "";
     }
 
     // ── Real-time listeners ──
@@ -9385,28 +9408,28 @@ service cloud.firestore {
 
         snap.docChanges().forEach(change => {
           const data = change.doc.data();
-          const modelName = data.name || data.title || "موديل";
+          const modelName = data.name || data.title || "Model";
           const modelFolderId = data.folderId || data.folder || null;
           const folderName = _getFolderName(modelFolderId);
-          const folderHint = folderName ? ` في "${folderName}"` : "";
+          const folderHint = folderName ? ` in "${folderName}"` : "";
 
           // ✅ Only notify if the user has access to this model's folder
           if (modelFolderId && !_userCanSeeFolder(modelFolderId)) return;
 
           if (change.type === "added" && !prevSet.has(change.doc.id)) {
             // New model added
-            _showNotifBanner("added", `✨ موديل جديد تم إضافته`, `${modelName}${folderHint}`);
-            _addNotifToHistory("added", `موديل جديد: ${modelName}`, `تم الإضافة${folderHint}`);
+            _showNotifBanner("added", `✨ New model added`, `${modelName}${folderHint}`);
+            _addNotifToHistory("added", `New model: ${modelName}`, `Added${folderHint}`);
 
           } else if (change.type === "modified") {
             // Model updated
-            _showNotifBanner("updated", `تم تعديل موديل`, `${modelName}${folderHint}`);
-            _addNotifToHistory("updated", `تعديل: ${modelName}`, `تم التحديث${folderHint}`);
+            _showNotifBanner("updated", `Model updated`, `${modelName}${folderHint}`);
+            _addNotifToHistory("updated", `Updated: ${modelName}`, `Updated${folderHint}`);
 
           } else if (change.type === "removed") {
             // Model removed
-            _showNotifBanner("removed", `تم حذف موديل`, `${modelName}${folderHint}`);
-            _addNotifToHistory("removed", `حُذف: ${modelName}`, `تم الحذف${folderHint}`);
+            _showNotifBanner("removed", `Model deleted`, `${modelName}${folderHint}`);
+            _addNotifToHistory("removed", `Deleted: ${modelName}`, `Deleted${folderHint}`);
           }
         });
       }
@@ -9443,22 +9466,22 @@ service cloud.firestore {
       if (_prevFolderIds !== null && S.currentUser && !_isAdminUser()) {
         snap.docChanges().forEach(change => {
           const data = change.doc.data();
-          const folderName = data.name || "مجلد";
+          const folderName = data.name || "Folder";
           const folderId = change.doc.id;
 
           // ✅ Only notify if the user has access to this folder
           if (!_userCanSeeFolder(folderId)) return;
 
           if (change.type === "added" && !_prevFolderIds.has(folderId)) {
-            _showNotifBanner("folder", `📁 مجلد جديد`, `تم إضافة "${folderName}"`);
-            _addNotifToHistory("folder", `مجلد جديد: ${folderName}`, "تم إضافة المجلد");
+            _showNotifBanner("folder", `📁 New folder`, `Added "${folderName}"`);
+            _addNotifToHistory("folder", `New folder: ${folderName}`, "Folder added");
 
           } else if (change.type === "modified") {
             // Only notify if name or color changed (not just updatedAt)
             const prev = S.allFolders.find(f => f.id === change.doc.id);
             if (prev && (prev.name !== data.name || prev.color !== data.color)) {
-              _showNotifBanner("folder", `تم تعديل مجلد`, `"${folderName}"`);
-              _addNotifToHistory("folder", `تعديل مجلد: ${folderName}`, "تم تحديث المجلد");
+              _showNotifBanner("folder", `Folder updated`, `"${folderName}"`);
+              _addNotifToHistory("folder", `Updated folder: ${folderName}`, "Folder updated");
             }
           }
         });
@@ -9529,6 +9552,11 @@ service cloud.firestore {
         if (el) el.textContent = appName;
       });
       document.title = appName;
+
+      // Background colors (admin-configurable) — applied as CSS variables so #folder-interior
+      // can use a different color from the rest of the page without duplicating the rule.
+      document.documentElement.style.setProperty('--page-bg', settings.pageBgColor || '#fdf6f0');
+      document.documentElement.style.setProperty('--folder-bg', settings.folderBgColor || '#fdf6f0');
     }
 
     window.loadAppSettings = async function() {
@@ -9549,10 +9577,55 @@ service cloud.firestore {
         if (fallback) fallback.classList.remove("hidden");
         if (hint) hint.textContent = "No logo set — using default icon";
       }
+      const pageBg = settings.pageBgColor || '#fdf6f0';
+      const folderBg = settings.folderBgColor || '#fdf6f0';
+      const pageBgInput = document.getElementById('settings-page-bg');
+      const pageBgHex = document.getElementById('settings-page-bg-hex');
+      const folderBgInput = document.getElementById('settings-folder-bg');
+      const folderBgHex = document.getElementById('settings-folder-bg-hex');
+      if (pageBgInput) pageBgInput.value = pageBg;
+      if (pageBgHex) pageBgHex.value = pageBg;
+      if (folderBgInput) folderBgInput.value = folderBg;
+      if (folderBgHex) folderBgHex.value = folderBg;
+
       // Fresh fetch every time this tab opens — don't rely on the one-shot startup load,
       // which may not have resolved yet if the tab is opened right after a page refresh.
       if (window.loadCatalogOptions) await window.loadCatalogOptions();
       if (window.fillCatalogOptionsTextareas) window.fillCatalogOptionsTextareas();
+    };
+
+    window.saveAppearanceColors = async function() {
+      const pageBg = (document.getElementById('settings-page-bg-hex')?.value || '').trim();
+      const folderBg = (document.getElementById('settings-folder-bg-hex')?.value || '').trim();
+      const statusEl = document.getElementById('appearance-save-status');
+      const isValidHex = v => /^#[0-9a-fA-F]{6}$/.test(v);
+      if (!isValidHex(pageBg) || !isValidHex(folderBg)) {
+        if (statusEl) { statusEl.textContent = '✗ Use a valid hex color, e.g. #fdf6f0'; statusEl.style.color = '#dc2626'; }
+        return;
+      }
+      if (statusEl) { statusEl.textContent = 'Saving...'; statusEl.style.color = '#9ca3af'; }
+      try {
+        await setDoc(doc(db,"app_settings","branding"), { pageBgColor: pageBg, folderBgColor: folderBg }, { merge: true });
+        document.documentElement.style.setProperty('--page-bg', pageBg);
+        document.documentElement.style.setProperty('--folder-bg', folderBg);
+        if (statusEl) { statusEl.textContent = '✓ Saved'; statusEl.style.color = '#16a34a'; }
+      } catch (e) {
+        console.error('saveAppearanceColors failed:', e);
+        if (statusEl) { statusEl.textContent = '✗ Failed: ' + (e && e.message ? e.message : e); statusEl.style.color = '#dc2626'; }
+      }
+    };
+
+    window.resetAppearanceColors = async function() {
+      const DEFAULT_BG = '#fdf6f0';
+      const pageBgInput = document.getElementById('settings-page-bg');
+      const pageBgHex = document.getElementById('settings-page-bg-hex');
+      const folderBgInput = document.getElementById('settings-folder-bg');
+      const folderBgHex = document.getElementById('settings-folder-bg-hex');
+      if (pageBgInput) pageBgInput.value = DEFAULT_BG;
+      if (pageBgHex) pageBgHex.value = DEFAULT_BG;
+      if (folderBgInput) folderBgInput.value = DEFAULT_BG;
+      if (folderBgHex) folderBgHex.value = DEFAULT_BG;
+      await window.saveAppearanceColors();
     };
 
     window.saveAppName = async function() {
