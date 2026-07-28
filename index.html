@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
-  <title>Sonbola Catalog</title>
+  <title>Catalog</title>
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Sonbola" />
-  <meta name="theme-color" content="#e85d3a" />
+  <meta name="apple-mobile-web-app-title" content="Catalog" />
+  <meta name="theme-color" content="#2E9FE0" />
   <link rel="manifest" id="pwa-manifest-link" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23FDF6F0'/%3E%3Cpath d='M12 40c0-3 3-6 6-6h22l6 8H18c-3 0-6 2-6 5z' fill='%23C44828'/%3E%3Cpath d='M18 34h22l6 8h36c3 0 6 3 6 6v28c0 3-3 6-6 6H18c-3 0-6-3-6-6V40c0-3 3-6 6-6z' fill='%23E85D3A'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='tab' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%234FB3E8'/%3E%3Cstop offset='1' stop-color='%232E86C1'/%3E%3C/linearGradient%3E%3ClinearGradient id='body' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%237FD1F5'/%3E%3Cstop offset='1' stop-color='%232E9FE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M12 34V26Q12 16 22 16H40L50 26H78Q88 26 88 34Z' fill='url(%23tab)'/%3E%3Crect x='12' y='34' width='76' height='50' rx='10' fill='url(%23body)'/%3E%3Cpath d='M50 47v20m0 0l-11-11m11 11l11-11' stroke='%231B6FA8' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* ── Kill Tailwind CDN badge + any injected fixed overlays ── */
@@ -1272,7 +1272,9 @@
     // Default app logo/icon — a Windows-style folder glyph in the brand color, used as the
     // fallback everywhere (header, login gate, PWA install icon) whenever no custom logo is
     // set in Admin Panel → App Settings.
-    window.FOLDER_ICON_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23FDF6F0'/%3E%3Cpath d='M12 40c0-3 3-6 6-6h22l6 8H18c-3 0-6 2-6 5z' fill='%23C44828'/%3E%3Cpath d='M18 34h22l6 8h36c3 0 6 3 6 6v28c0 3-3 6-6 6H18c-3 0-6-3-6-6V40c0-3 3-6 6-6z' fill='%23E85D3A'/%3E%3C/svg%3E";
+    // Blue "folder with download arrow" icon — used everywhere the app's identity shows:
+    // favicon, PWA install icon, the header logo, and the login page logo.
+    window.FOLDER_ICON_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='tab' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%234FB3E8'/%3E%3Cstop offset='1' stop-color='%232E86C1'/%3E%3C/linearGradient%3E%3ClinearGradient id='body' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%237FD1F5'/%3E%3Cstop offset='1' stop-color='%232E9FE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M12 34V26Q12 16 22 16H40L50 26H78Q88 26 88 34Z' fill='url(%23tab)'/%3E%3Crect x='12' y='34' width='76' height='50' rx='10' fill='url(%23body)'/%3E%3Cpath d='M50 47v20m0 0l-11-11m11 11l11-11' stroke='%231B6FA8' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E";
 
     // ── Android bridge: save files natively when running inside the Sonbola Android app ──
     // In a regular browser window.AndroidDownloader doesn't exist, so this resolves false
@@ -1307,8 +1309,8 @@
     // 1. Inject manifest dynamically (so icon URL can be the app logo if loaded)
     (function injectManifest() {
       const manifest = {
-        name: "Sonbola Catalog",
-        short_name: "Sonbola",
+        name: "Catalog",
+        short_name: "Catalog",
         description: "Product catalog manager",
         start_url: window.location.href.split('?')[0],
         display: "standalone",
@@ -1405,7 +1407,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
           </svg>
         </div>
-        <span id="app-name-display" class="font-extrabold text-gray-800 text-sm sm:text-base truncate max-w-[140px] sm:max-w-none">Sonbola Catalog</span>
+        <span id="app-name-display" class="font-extrabold text-gray-800 text-sm sm:text-base truncate max-w-[140px] sm:max-w-none">Catalog</span>
       </div>
 
       <!-- Primary actions -->
@@ -1592,7 +1594,7 @@
           </svg>
         </div>
         <div>
-          <p id="sheet-app-name" class="text-sm font-extrabold text-gray-800">Sonbola Catalog</p>
+          <p id="sheet-app-name" class="text-sm font-extrabold text-gray-800">Catalog</p>
           <p id="sheet-user-role" class="text-[10px] font-semibold text-gray-400">Guest</p>
         </div>
       </div>
@@ -1725,7 +1727,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
           </svg>
         </div>
-        <h1 id="gate-app-name" class="text-2xl font-extrabold text-[#1a1a2e]">Sonbola Catalog</h1>
+        <h1 id="gate-app-name" class="text-2xl font-extrabold text-[#1a1a2e]">Catalog</h1>
         <p class="text-sm text-gray-400 mt-1">Please sign in to continue</p>
       </div>
 
@@ -7343,7 +7345,7 @@ service cloud.firestore {
           <div class="bg-gray-50 rounded-2xl p-4 space-y-3">
             <p class="text-xs font-black text-gray-600">App Name</p>
             <div class="flex gap-2">
-              <input id="settings-app-name" type="text" placeholder="e.g. Sonbola Catalog"
+              <input id="settings-app-name" type="text" placeholder="e.g. Catalog"
                 class="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
               <button onclick="saveAppName()"
                 class="h-10 px-4 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold hover:bg-[#2d2d4e] transition-colors flex items-center gap-1.5">
@@ -9495,7 +9497,7 @@ service cloud.firestore {
       // Firestore) so the app's branding stays consistent everywhere, on the web and in the
       // Android app, and can't end up pointing at a broken/removed image again.
       const logoUrl = DEFAULT_LOGO_URL;
-      const appName = settings.appName || "Sonbola Catalog";
+      const appName = settings.appName || "Catalog";
 
       // Header logo
       const headerImg = document.getElementById("header-logo-img");
