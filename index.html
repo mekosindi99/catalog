@@ -6379,13 +6379,12 @@ service cloud.firestore {
       };
       if (!(navigator.clipboard && typeof ClipboardItem !== 'undefined')) return false;
       const m = models[0];
-      const imgUrl = downloadCloudinaryUrl(m.imageUrl, m.imageSize, 'png');
-      if (!imgUrl) return false;
       setStatus('Copying...');
       try {
-        const resp = await fetch(imgUrl);
-        if (!resp.ok) throw new Error('fetch failed: ' + resp.status);
-        const blob = await resp.blob();
+        // Same code/price/age/discount badges as ZIP/Gallery export — a copied image should
+        // carry the same info a customer would see anywhere else, not a bare photo.
+        const blob = await renderBadgedImageBlob(m, 'all', 'image/png');
+        if (!blob) throw new Error('image render failed');
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         setStatus(models.length > 1
           ? `Copied image 1 of ${models.length} (clipboard holds one at a time) — paste with Ctrl+V`
@@ -6646,6 +6645,122 @@ service cloud.firestore {
       }, 1800);
     }
 
+    // Fetches a model's photo and burns in the same code/price/age/discount badges the
+    // ZIP/Gallery export draws — shared by that export AND by Copy/Share, so a shared image
+    // carries the same info instead of being a bare, unbranded photo.
+    async function renderBadgedImageBlob(m, mode, outputMime) {
+      outputMime = outputMime || 'image/jpeg';
+      const imgUrl = downloadCloudinaryUrl(m.imageUrl, m.imageSize, 'jpg');
+      if (!imgUrl) return null;
+      const resp = await fetch(imgUrl);
+      if (!resp.ok) return null;
+      const rawBlob = await resp.blob();
+      if (mode === 'clean') return rawBlob;
+
+      const bmp = await createImageBitmap(rawBlob);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width  = bmp.width;
+      canvas.height = bmp.height;
+      ctx.drawImage(bmp, 0, 0);
+      const w = canvas.width, h = canvas.height;
+
+      // Bottom gradient
+      const gb = ctx.createLinearGradient(0, h * 0.55, 0, h);
+      gb.addColorStop(0, 'rgba(0,0,0,0)'); gb.addColorStop(1, 'rgba(0,0,0,0.78)');
+      ctx.fillStyle = gb; ctx.fillRect(0, 0, w, h);
+      // Top gradient
+      const gt = ctx.createLinearGradient(0, 0, 0, h * 0.32);
+      gt.addColorStop(0, 'rgba(0,0,0,0.48)'); gt.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gt; ctx.fillRect(0, 0, w, h);
+
+      const pad = w * 0.04;
+      function btc(bg) { const hx = bg.replace('#',''); const r=parseInt(hx.substr(0,2),16),g=parseInt(hx.substr(2,2),16),b2=parseInt(hx.substr(4,2),16); return (r*0.299+g*0.587+b2*0.114)>160?'#1a1a1a':'#ffffff'; }
+      function calcBR(r, bh) { const rv=parseFloat(r); if(isNaN(rv)) return bh*0.38; if(rv>=999) return bh/2; return Math.round(rv*bh/16); }
+
+      const _dlFolder = allFolders.find(f => f.id === m.folderId);
+      const _dlFFS = (_dlFolder && _dlFolder.fontSizes) || {};
+      const _dlAge  = Math.max(10,Math.min(300,(_dlFFS.age      != null ? _dlFFS.age      : globalFontSizes.age)      || 100));
+      const _dlCode = Math.max(10,Math.min(300,(_dlFFS.code     != null ? _dlFFS.code     : globalFontSizes.code)     || 100));
+      const _dlPrc  = Math.max(10,Math.min(300,(_dlFFS.price    != null ? _dlFFS.price    : globalFontSizes.price)    || 100));
+      const _dlDisc = Math.max(10,Math.min(300,(_dlFFS.discount != null ? _dlFFS.discount : globalFontSizes.discount) || 100));
+      const _rawBR  = (_dlFFS.badgeRadius != null ? _dlFFS.badgeRadius : (globalFontSizes.badgeRadius != null ? globalFontSizes.badgeRadius : 999));
+      const bfs = Math.round(w*0.058*_dlAge/100);
+      const bh  = Math.round(bfs*1.75);
+      const cfs = Math.round(w*0.075*_dlCode/100);
+      const pfs = Math.round(w*0.062*_dlPrc/100);
+      const ph  = Math.round(pfs*1.75);
+      const dfs = Math.round(w*0.052*_dlDisc/100);
+      const dh  = Math.round(dfs*1.6);
+      const br       = calcBR(_rawBR, bh);
+      const br_price = calcBR(_rawBR, ph);
+      const br_disc  = calcBR(_rawBR, dh);
+
+      if (mode === 'all') {
+        ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+        const ac = m.ageColor||'#00bcd4', cc = m.codeColor||'#ffffff', pc = m.priceColor||'#ffd600';
+        // Age badges top-right
+        if (m.ageGroup) {
+          const ages = cleanAgeStr(m.ageGroup).split(',').map(a=>a.trim()).filter(Boolean);
+          ctx.font = `800 ${bfs}px Arial`;
+          ages.forEach((age, idx) => {
+            const al = formatAgeTag(age);
+            const aw = Math.min(ctx.measureText(al).width + pad*1.5, w*0.55);
+            const ax = Math.max(pad, w-aw-pad), ay = pad+idx*(bh+pad*0.55);
+            ctx.fillStyle = ac; roundRect(ctx,ax,ay,aw,bh,br); ctx.fill();
+            ctx.fillStyle = btc(ac); ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(al, ax+aw/2, ay+bh/2);
+          });
+        }
+        // Discount badge top-left
+        const priceInfo = getDiscountedPrice(m);
+        if (priceInfo.hasDiscount) {
+          ctx.font = `800 ${dfs}px Arial`;
+          const dlabel = `-${priceInfo.pct}%`;
+          const dw2 = Math.min(ctx.measureText(dlabel).width + pad*1.3, w*0.35);
+          ctx.fillStyle='#ef4444'; roundRect(ctx,pad,pad,dw2,dh,br_disc); ctx.fill();
+          ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(dlabel, pad+dw2/2, pad+dh/2);
+        }
+        // Model code bottom-left
+        ctx.font = `800 ${cfs}px Arial`; ctx.fillStyle = cc;
+        ctx.textAlign='left'; ctx.textBaseline='bottom';
+        ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=12;
+        ctx.fillText((m.modelCode||'').replace(/^./,c=>c.toUpperCase()), pad, h-pad*0.85);
+        ctx.shadowBlur=0;
+        // Price bottom-right
+        const prI = getDiscountedPrice(m);
+        if (prI.hasDiscount) {
+          const fl = fmt(prI.final); ctx.font=`800 ${pfs}px Arial`;
+          const pw2=ctx.measureText(fl).width+pad*1.5, px2=w-pw2-pad, py2=h-ph-pad*0.85;
+          ctx.fillStyle=pc; roundRect(ctx,px2,py2,pw2,ph,br_price); ctx.fill();
+          ctx.fillStyle=btc(pc); ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(fl, px2+pw2/2, py2+ph/2);
+          const ol=fmt(prI.orig), oFs=Math.round(pfs*0.72);
+          ctx.font=`700 ${oFs}px Arial`;
+          const ow2=ctx.measureText(ol).width, ox2=px2+pw2/2-ow2/2, oy2=py2-oFs*0.22;
+          ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+          ctx.fillText(ol, ox2, oy2);
+          ctx.beginPath(); ctx.strokeStyle='rgba(255,255,255,0.65)'; ctx.lineWidth=Math.max(2,oFs*0.08);
+          const sty=oy2-oFs*0.38; ctx.moveTo(ox2,sty); ctx.lineTo(ox2+ow2,sty); ctx.stroke();
+        } else {
+          const pt=fmt(prI.orig); ctx.font=`800 ${pfs}px Arial`;
+          const pw2=ctx.measureText(pt).width+pad*1.5, px2=w-pw2-pad, py2=h-ph-pad*0.85;
+          ctx.fillStyle=pc; roundRect(ctx,px2,py2,pw2,ph,br_price); ctx.fill();
+          ctx.fillStyle=btc(pc); ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(pt, px2+pw2/2, py2+ph/2);
+        }
+      } else {
+        // code-only
+        const cc = m.codeColor||'#ffffff';
+        ctx.font=`800 ${cfs}px Arial`; ctx.fillStyle=cc;
+        ctx.textAlign='left'; ctx.textBaseline='bottom';
+        ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=12;
+        ctx.fillText((m.modelCode||'').replace(/^./,c=>c.toUpperCase()), pad, h-pad*0.85);
+      }
+      return await new Promise(res => canvas.toBlob(res, outputMime, 1));
+    }
+
     // ── Gallery Download: sequential direct downloads, no ZIP ──
     window.dlAsGallery = async function(mode) {
       const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
@@ -6654,7 +6769,6 @@ service cloud.firestore {
       const btn   = document.getElementById("dl-confirm-btn");
       const label = document.getElementById("dl-confirm-label");
       const padLen = String(models.length).length;
-      const outMime = 'image/jpeg';
       const outExt  = 'jpg';
 
       // ── Pick a save folder once (no per-file dialogs) ──
@@ -6687,123 +6801,8 @@ service cloud.firestore {
         if (_galleryCancelled) break;
         try {
           updateGalleryProgress(done, models.length, m.modelCode || ('Image ' + (_i+1)));
-          let imgUrl = downloadCloudinaryUrl(m.imageUrl, m.imageSize, 'jpg');
-          if (!imgUrl) continue;
-
-          let blob;
-          if (mode === 'all' || mode === 'code') {
-            // Draw overlays on canvas (same as ZIP path)
-            const resp = await fetch(imgUrl);
-            if (!resp.ok) continue;
-            const rawBlob = await resp.blob();
-            const bmp = await createImageBitmap(rawBlob);
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width  = bmp.width;
-            canvas.height = bmp.height;
-            ctx.drawImage(bmp, 0, 0);
-            const w = canvas.width, h = canvas.height;
-
-            // Bottom gradient
-            const gb = ctx.createLinearGradient(0, h * 0.55, 0, h);
-            gb.addColorStop(0, 'rgba(0,0,0,0)'); gb.addColorStop(1, 'rgba(0,0,0,0.78)');
-            ctx.fillStyle = gb; ctx.fillRect(0, 0, w, h);
-            // Top gradient
-            const gt = ctx.createLinearGradient(0, 0, 0, h * 0.32);
-            gt.addColorStop(0, 'rgba(0,0,0,0.48)'); gt.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = gt; ctx.fillRect(0, 0, w, h);
-
-            const pad = w * 0.04;
-            function btc(bg) { const hx = bg.replace('#',''); const r=parseInt(hx.substr(0,2),16),g=parseInt(hx.substr(2,2),16),b2=parseInt(hx.substr(4,2),16); return (r*0.299+g*0.587+b2*0.114)>160?'#1a1a1a':'#ffffff'; }
-            function calcBR(r, bh) { const rv=parseFloat(r); if(isNaN(rv)) return bh*0.38; if(rv>=999) return bh/2; return Math.round(rv*bh/16); }
-
-            const _dlFolder = allFolders.find(f => f.id === m.folderId);
-            const _dlFFS = (_dlFolder && _dlFolder.fontSizes) || {};
-            const _dlAge  = Math.max(10,Math.min(300,(_dlFFS.age      != null ? _dlFFS.age      : globalFontSizes.age)      || 100));
-            const _dlCode = Math.max(10,Math.min(300,(_dlFFS.code     != null ? _dlFFS.code     : globalFontSizes.code)     || 100));
-            const _dlPrc  = Math.max(10,Math.min(300,(_dlFFS.price    != null ? _dlFFS.price    : globalFontSizes.price)    || 100));
-            const _dlDisc = Math.max(10,Math.min(300,(_dlFFS.discount != null ? _dlFFS.discount : globalFontSizes.discount) || 100));
-            const _rawBR  = (_dlFFS.badgeRadius != null ? _dlFFS.badgeRadius : (globalFontSizes.badgeRadius != null ? globalFontSizes.badgeRadius : 999));
-            const bfs = Math.round(w*0.058*_dlAge/100);
-            const bh  = Math.round(bfs*1.75);
-            const cfs = Math.round(w*0.075*_dlCode/100);
-            const pfs = Math.round(w*0.062*_dlPrc/100);
-            const ph  = Math.round(pfs*1.75);
-            const dfs = Math.round(w*0.052*_dlDisc/100);
-            const dh  = Math.round(dfs*1.6);
-            const br       = calcBR(_rawBR, bh);
-            const br_price = calcBR(_rawBR, ph);
-            const br_disc  = calcBR(_rawBR, dh);
-
-            if (mode === 'all') {
-              ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
-              const ac = m.ageColor||'#00bcd4', cc = m.codeColor||'#ffffff', pc = m.priceColor||'#ffd600';
-              // Age badges top-right
-              if (m.ageGroup) {
-                const ages = cleanAgeStr(m.ageGroup).split(',').map(a=>a.trim()).filter(Boolean);
-                ctx.font = `800 ${bfs}px Arial`;
-                ages.forEach((age, idx) => {
-                  const al = formatAgeTag(age);
-                  const aw = Math.min(ctx.measureText(al).width + pad*1.5, w*0.55);
-                  const ax = Math.max(pad, w-aw-pad), ay = pad+idx*(bh+pad*0.55);
-                  ctx.fillStyle = ac; roundRect(ctx,ax,ay,aw,bh,br); ctx.fill();
-                  ctx.fillStyle = btc(ac); ctx.textAlign='center'; ctx.textBaseline='middle';
-                  ctx.fillText(al, ax+aw/2, ay+bh/2);
-                });
-              }
-              // Discount badge top-left
-              const priceInfo = getDiscountedPrice(m);
-              if (priceInfo.hasDiscount) {
-                ctx.font = `800 ${dfs}px Arial`;
-                const dlabel = `-${priceInfo.pct}%`;
-                const dw2 = Math.min(ctx.measureText(dlabel).width + pad*1.3, w*0.35);
-                ctx.fillStyle='#ef4444'; roundRect(ctx,pad,pad,dw2,dh,br_disc); ctx.fill();
-                ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
-                ctx.fillText(dlabel, pad+dw2/2, pad+dh/2);
-              }
-              // Model code bottom-left
-              ctx.font = `800 ${cfs}px Arial`; ctx.fillStyle = cc;
-              ctx.textAlign='left'; ctx.textBaseline='bottom';
-              ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=12;
-              ctx.fillText((m.modelCode||'').replace(/^./,c=>c.toUpperCase()), pad, h-pad*0.85);
-              ctx.shadowBlur=0;
-              // Price bottom-right
-              const prI = getDiscountedPrice(m);
-              if (prI.hasDiscount) {
-                const fl = fmt(prI.final); ctx.font=`800 ${pfs}px Arial`;
-                const pw2=ctx.measureText(fl).width+pad*1.5, px2=w-pw2-pad, py2=h-ph-pad*0.85;
-                ctx.fillStyle=pc; roundRect(ctx,px2,py2,pw2,ph,br_price); ctx.fill();
-                ctx.fillStyle=btc(pc); ctx.textAlign='center'; ctx.textBaseline='middle';
-                ctx.fillText(fl, px2+pw2/2, py2+ph/2);
-                const ol=fmt(prI.orig), oFs=Math.round(pfs*0.72);
-                ctx.font=`700 ${oFs}px Arial`;
-                const ow2=ctx.measureText(ol).width, ox2=px2+pw2/2-ow2/2, oy2=py2-oFs*0.22;
-                ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.textAlign='left'; ctx.textBaseline='bottom';
-                ctx.fillText(ol, ox2, oy2);
-                ctx.beginPath(); ctx.strokeStyle='rgba(255,255,255,0.65)'; ctx.lineWidth=Math.max(2,oFs*0.08);
-                const sty=oy2-oFs*0.38; ctx.moveTo(ox2,sty); ctx.lineTo(ox2+ow2,sty); ctx.stroke();
-              } else {
-                const pt=fmt(prI.orig); ctx.font=`800 ${pfs}px Arial`;
-                const pw2=ctx.measureText(pt).width+pad*1.5, px2=w-pw2-pad, py2=h-ph-pad*0.85;
-                ctx.fillStyle=pc; roundRect(ctx,px2,py2,pw2,ph,br_price); ctx.fill();
-                ctx.fillStyle=btc(pc); ctx.textAlign='center'; ctx.textBaseline='middle';
-                ctx.fillText(pt, px2+pw2/2, py2+ph/2);
-              }
-            } else {
-              // code-only
-              const cc = m.codeColor||'#ffffff';
-              ctx.font=`800 ${cfs}px Arial`; ctx.fillStyle=cc;
-              ctx.textAlign='left'; ctx.textBaseline='bottom';
-              ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=12;
-              ctx.fillText((m.modelCode||'').replace(/^./,c=>c.toUpperCase()), pad, h-pad*0.85);
-            }
-            blob = await new Promise(res => canvas.toBlob(res, outMime, 1));
-          } else {
-            // clean / original — just fetch raw image
-            const resp = await fetch(imgUrl);
-            if (!resp.ok) continue;
-            blob = await resp.blob();
-          }
+          const blob = await renderBadgedImageBlob(m, mode);
+          if (!blob) continue;
 
           // Save image — Android app bridge first (saves straight into the phone's
           // Pictures/Gallery), then File System Access API, then anchor-click fallback.
@@ -6862,11 +6861,10 @@ service cloud.firestore {
       for (let i = 0; i < models.length; i++) {
         const m = models[i];
         try {
-          const imgUrl = downloadCloudinaryUrl(m.imageUrl, m.imageSize, 'jpg');
-          if (!imgUrl) continue;
-          const resp = await fetch(imgUrl);
-          if (!resp.ok) continue;
-          const blob = await resp.blob();
+          // Same code/price/age/discount badges as ZIP/Gallery export, so shared images carry
+          // the same info a customer would see anywhere else instead of being a bare photo.
+          const blob = await renderBadgedImageBlob(m, 'all');
+          if (!blob) continue;
           const base64 = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -6905,11 +6903,9 @@ service cloud.firestore {
         const files = [];
         for (let i = 0; i < models.length; i++) {
           const m = models[i];
-          const imgUrl = downloadCloudinaryUrl(m.imageUrl, m.imageSize, 'jpg');
-          if (!imgUrl) continue;
-          const resp = await fetch(imgUrl);
-          if (!resp.ok) continue;
-          const blob = await resp.blob();
+          // Same code/price/age/discount badges as ZIP/Gallery export.
+          const blob = await renderBadgedImageBlob(m, 'all');
+          if (!blob) continue;
           const seq = String(i + 1).padStart(2, '0');
           files.push(new File([blob], `${seq}_${m.modelCode || 'model'}.jpg`, { type: blob.type || 'image/jpeg' }));
         }
