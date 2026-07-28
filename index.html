@@ -963,8 +963,13 @@
       width: 100%; height: 140px;
       margin-bottom: 10px;
       transition: transform 0.22s;
-      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M12 34V26Q12 16 22 16H40L50 26H78Q88 26 88 34Z' fill='white'/%3E%3Crect x='12' y='34' width='76' height='50' rx='10' fill='white'/%3E%3C/svg%3E");
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M12 34V26Q12 16 22 16H40L50 26H78Q88 26 88 34Z' fill='white'/%3E%3Crect x='12' y='34' width='76' height='50' rx='10' fill='white'/%3E%3C/svg%3E");
+      /* A dedicated full-bleed shape — deliberately touching all 4 edges of the 0-100
+         viewBox (unlike the app icon's mask, which is inset with equal margins so it
+         isn't clipped inside a rounded badge). This one must fill the wrap edge-to-edge
+         once stretched via mask-size:100% 100%, or the untouched viewBox margin shows
+         through as the card's own white background around a shrunken-looking icon. */
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M0 30V16Q0 4 12 4H42L54 16H88Q100 16 100 28V30Z' fill='white'/%3E%3Crect x='0' y='28' width='100' height='72' rx='9' fill='white'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M0 30V16Q0 4 12 4H42L54 16H88Q100 16 100 28V30Z' fill='white'/%3E%3Crect x='0' y='28' width='100' height='72' rx='9' fill='white'/%3E%3C/svg%3E");
       -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
       -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
     }
