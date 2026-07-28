@@ -2086,6 +2086,11 @@ service cloud.firestore {
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
       Copy
     </button>
+    <button type="button" onclick="window.shareCollage()" title="Merge into one image — the only way Instagram/Facebook/Messenger accept several models at once"
+      style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#7c3aed;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z"/></svg>
+      Collage
+    </button>
     <button type="button" onclick="window.downloadSelectedFromBar()"
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#e85d3a;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -6411,6 +6416,100 @@ service cloud.firestore {
       // Clipboard API unavailable/blocked — try the Web Share API (real file sharing on the
       // mobile browsers that support it) before giving up.
       return window.shareSelectedImagesWeb(models);
+    };
+
+    // Instagram, Facebook, and Messenger — unlike WhatsApp/Viber/Telegram — don't support
+    // receiving several images at once from another app; each of them only accepts a single
+    // file share. There's no client-side workaround for that (it's those apps' own share-target
+    // registration, not something a web page or Android intent can override). The one thing
+    // that DOES work everywhere: merge the selected models into ONE image (a grid, each cell
+    // still carrying its own code/price/age/discount badges) and share that single file — every
+    // app that accepts any image share accepts this.
+    async function buildCollageBlob(models) {
+      const cellW = 520, cellH = 693, gap = 10;
+      const cols = models.length <= 2 ? models.length : (models.length === 4 ? 2 : (models.length <= 6 ? 3 : 4));
+      const rows = Math.ceil(models.length / cols);
+      const canvas = document.createElement('canvas');
+      canvas.width  = cols * cellW + (cols + 1) * gap;
+      canvas.height = rows * cellH + (rows + 1) * gap;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < models.length; i++) {
+        const blob = await renderBadgedImageBlob(models[i], 'all');
+        if (!blob) continue;
+        const bmp = await createImageBitmap(blob);
+        const col = i % cols, row = Math.floor(i / cols);
+        const x = gap + col * (cellW + gap), y = gap + row * (cellH + gap);
+        // "cover" fit — scale to fill the cell and center-crop, like CSS object-fit:cover,
+        // so every cell looks uniform regardless of the source photo's own aspect ratio.
+        const scale = Math.max(cellW / bmp.width, cellH / bmp.height);
+        const dw = bmp.width * scale, dh = bmp.height * scale;
+        const dx = x - (dw - cellW) / 2, dy = y - (dh - cellH) / 2;
+        ctx.save();
+        ctx.beginPath(); ctx.rect(x, y, cellW, cellH); ctx.clip();
+        ctx.drawImage(bmp, dx, dy, dw, dh);
+        ctx.restore();
+      }
+      return await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result || '';
+          const comma = dataUrl.indexOf(',');
+          resolve(comma >= 0 ? dataUrl.substring(comma + 1) : '');
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    window.shareCollage = async function() {
+      if (!selectedIds.size) return;
+      const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
+      if (!models.length) return;
+      const setStatus = (msg) => {
+        const el = document.getElementById('selection-bar-status');
+        if (el) el.textContent = msg;
+      };
+      setStatus('Building collage...');
+      try {
+        const blob = await buildCollageBlob(models);
+        if (!blob) { setStatus('Failed to build collage'); return; }
+        const filename = `catalog_${models.length}_models.jpg`;
+
+        if (window.AndroidDownloader && typeof window.AndroidDownloader.shareImages === 'function') {
+          const base64 = await blobToBase64(blob);
+          window.AndroidDownloader.shareImages(JSON.stringify([{ base64, filename }]));
+          setStatus('');
+          return;
+        }
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], filename, { type: 'image/jpeg' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file] });
+            setStatus('');
+            return;
+          }
+        }
+        if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+          try {
+            // Clipboard image writes need the ClipboardItem key to match the blob's real MIME
+            // type — reuse the JPEG we already built instead of re-rendering as PNG.
+            await navigator.clipboard.write([new ClipboardItem({ 'image/jpeg': blob })]);
+            setStatus('Copied! Paste with Ctrl+V into WhatsApp/Instagram/any app');
+            return;
+          } catch(e) { /* fall through */ }
+        }
+        setStatus("Sharing isn't supported here — use Download");
+      } catch (e) {
+        console.error('shareCollage failed:', e);
+        setStatus('Failed to build collage');
+      }
     };
 
     // Same behavior as the per-folder "Gallery - download" button: saves each selected image
