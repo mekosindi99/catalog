@@ -5457,10 +5457,27 @@ service cloud.firestore {
       }
 
       const isYearQuery  = /(سنة|سنه|سنوات|سنتين|year|yrs?)/.test(q);
-      const isMonthQuery = /(شهر|أشهر|اشهر|month)/.test(q);
-      if ((isYearQuery || isMonthQuery) && numbers.length) {
-        const ageStr = (m.ageGroup || '').toLowerCase();
-        return ageStr.includes(String(numbers[0]));
+      const isMonthQuery = /(شهر|أشهر|اشهر|شهرين|month)/.test(q);
+      if (isYearQuery || isMonthQuery) {
+        // "2 years" must mean "age 2 falls inside this model's range", not "the digit 2
+        // appears somewhere in the raw tag text" — the old substring check missed models
+        // like "1y_8y" (2 is inside 1-8, but "8y_1y" has no literal "2") and could equally
+        // false-match unrelated tags that happen to contain the same digit.
+        let targetMonths = null;
+        if (numbers.length) {
+          targetMonths = (isMonthQuery && !isYearQuery) ? numbers[0] : numbers[0] * 12;
+        } else if (/سنتين/.test(q)) {
+          targetMonths = 24; // Arabic dual form: "two years" with no digit
+        } else if (/شهرين/.test(q)) {
+          targetMonths = 2; // Arabic dual form: "two months"
+        }
+        if (targetMonths !== null) {
+          const tags = (m.ageGroup || '').split(',').map(t => t.trim()).filter(Boolean);
+          return tags.some(tag => {
+            const r = parseAgeTagMonths(tag);
+            return r && targetMonths >= r.from && targetMonths <= r.to;
+          });
+        }
       }
 
       if ((m.ageGroup || '').toLowerCase().includes(q)) return true;
