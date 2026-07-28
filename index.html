@@ -899,9 +899,9 @@
     }
 
 
-    /* ── Folder preview: taller on mobile ── */
+    /* ── Folder preview collage: taller on mobile ── */
     @media (max-width: 639px) {
-      .folder-shape-wrap { height: 130px !important; }
+      .folder-preview-collage { height: 130px !important; }
     }
 
     /* ── Admin panel: full width on mobile ── */
@@ -952,55 +952,35 @@
     }
     .folder-card:hover::before { opacity: 1; }
 
-    /* ── Folder-shaped preview — the whole wrap is clipped to the exact same folder
-       silhouette (tab + rounded body) as the app's own icon, via a CSS mask, so the
-       shape is one smooth continuous outline rather than two stacked rounded rects.
-       A solid color layer fills the whole thing (shows through as the tab, and as the
-       full folder when empty); the 4-image collage sits on top, confined to the body
-       area, and the name/count caption overlays the bottom with a gradient scrim. ── */
-    .folder-shape-wrap {
-      position: relative;
-      width: 100%; height: 140px;
-      margin-bottom: 10px;
+    .folder-icon-wrap {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.75rem;
       transition: transform 0.22s;
-      /* A dedicated full-bleed shape — deliberately touching all 4 edges of the 0-100
-         viewBox (unlike the app icon's mask, which is inset with equal margins so it
-         isn't clipped inside a rounded badge). This one must fill the wrap edge-to-edge
-         once stretched via mask-size:100% 100%, or the untouched viewBox margin shows
-         through as the card's own white background around a shrunken-looking icon. */
-      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M0 30V16Q0 4 12 4H42L54 16H88Q100 16 100 28V30Z' fill='white'/%3E%3Crect x='0' y='28' width='100' height='72' rx='9' fill='white'/%3E%3C/svg%3E");
-      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M0 30V16Q0 4 12 4H42L54 16H88Q100 16 100 28V30Z' fill='white'/%3E%3Crect x='0' y='28' width='100' height='72' rx='9' fill='white'/%3E%3C/svg%3E");
-      -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
-      -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
     }
-    .folder-card:hover .folder-shape-wrap { transform: scale(1.03); }
-    .folder-shape-fill { position: absolute; inset: 0; }
-    .folder-shape-body {
-      position: absolute; left: 0; right: 0; bottom: 0;
-      top: 32%;
+    .folder-card:hover .folder-icon-wrap { transform: scale(1.08); }
+
+    /* ── Folder preview collage ── */
+    .folder-preview-collage {
+      width: 100%; height: 80px;
+      border-radius: 10px; overflow: hidden;
+      margin-bottom: 10px;
       display: grid; gap: 2px;
+      background: #f0ebe7;
     }
-    .folder-shape-caption {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column; justify-content: flex-end;
-      padding: 10px;
-      background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 60%);
-      pointer-events: none;
-    }
-    .folder-shape-caption .folder-name { color: #fff; font-weight: 800; font-size: 0.85rem; line-height: 1.2; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
-    .folder-shape-caption .folder-count { color: rgba(255,255,255,0.85); font-size: 0.68rem; font-weight: 600; margin-top: 1px; }
     @media (max-width: 640px) {
-      .folder-shape-wrap { height: 170px; }
+      .folder-preview-collage { height: 160px; }
       .folder-card { border-radius: 16px; padding: 1rem; }
     }
-    .folder-shape-body[data-count="1"] { grid-template-columns: 1fr; }
-    .folder-shape-body[data-count="2"] { grid-template-columns: 1fr 1fr; }
-    .folder-shape-body[data-count="3"] {
+    .folder-preview-collage[data-count="1"] { grid-template-columns: 1fr; }
+    .folder-preview-collage[data-count="2"] { grid-template-columns: 1fr 1fr; }
+    .folder-preview-collage[data-count="3"] {
       grid-template-columns: 2fr 1fr;
       grid-template-rows: 1fr 1fr;
     }
-    .folder-shape-body[data-count="3"] .collage-cell:first-child { grid-row: 1 / 3; }
-    .folder-shape-body[data-count="4"] {
+    .folder-preview-collage[data-count="3"] .collage-cell:first-child { grid-row: 1 / 3; }
+    .folder-preview-collage[data-count="4"] {
       grid-template-columns: 1fr 1fr;
       grid-template-rows: 1fr 1fr;
     }
@@ -3605,6 +3585,7 @@ service cloud.firestore {
     // ── Folder rendering ──
     function folderCardHTML(folder) {
       const color = folder.color || "#e85d3a";
+      const bgAlpha = color + "22";
       const count = allModels.filter(m => m.folderId === folder.id).length;
       const dateStr = folder.createdAt
         ? new Date(folder.createdAt.toDate ? folder.createdAt.toDate() : folder.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
@@ -3612,37 +3593,23 @@ service cloud.firestore {
       const safeFolderName = escapeHtml(folder.name || '');
       const safeFolderId = escapeHtml(folder.id);
 
-      // Build image collage (up to 4 images) inside a folder-shaped silhouette (tab + body) —
-      // the body shows the collage grid when there are images; when empty, it's left transparent
-      // so the solid color fill layer behind it shows through as one plain-colored folder.
+      // Build image collage (up to 4 images)
       const previewModels = allModels.filter(m => m.folderId === folder.id && m.imageUrl).slice(0, 4);
-      let bodyHTML;
+      let previewHTML;
       if (previewModels.length === 0) {
-        bodyHTML = '';
+        // No images yet → show folder icon
+        previewHTML = `<div class="folder-icon-wrap" style="background:${bgAlpha}">
+            <svg class="w-7 h-7" style="color:${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+            </svg>
+          </div>`;
       } else {
         const cells = previewModels.map(m => {
           const src = optimizedCloudinaryUrl(m.imageUrl, m.imageSize);
           return `<div class="collage-cell"><img src="${src}" alt="${escapeHtml(m.modelCode||'')}" loading="lazy" /></div>`;
         }).join('');
-        bodyHTML = `<div class="folder-shape-body" data-count="${previewModels.length}">${cells}</div>`;
+        previewHTML = `<div class="folder-preview-collage" data-count="${previewModels.length}">${cells}</div>`;
       }
-      const discountBadge = folder.discount && folder.discount.value > 0
-        ? `<span style="background:#ef4444;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;">-${folder.discount.type === 'percent' ? folder.discount.value + '%' : fmt(folder.discount.value)}</span>`
-        : (globalDiscount && globalDiscount.value > 0
-          ? `<span style="background:#f97316;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;">-${globalDiscount.type === 'percent' ? globalDiscount.value + '%' : fmt(globalDiscount.value)}</span>`
-          : '');
-
-      const previewHTML = `<div class="folder-shape-wrap">
-          <div class="folder-shape-fill" style="background:${color}"></div>
-          ${bodyHTML}
-          <div class="folder-shape-caption">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
-              <span class="folder-name">${safeFolderName}</span>
-              ${discountBadge}
-            </div>
-            <span class="folder-count">${count} ${count === 1 ? 'model' : 'models'}${folder.hiddenFromSearch ? ' • Hidden from search' : ''}</span>
-          </div>
-        </div>`;
 
       return `
         <div class="folder-card" style="--folder-color:${color}" data-folder-id="${safeFolderId}">
@@ -3652,7 +3619,14 @@ service cloud.firestore {
             </svg>
           </button>
           ${previewHTML}
-          ${dateStr ? `<p class="text-[10px] text-gray-300 font-medium mt-1.5">${escapeHtml(dateStr)}</p>` : ''}
+          <div class="flex items-center justify-between gap-1 pr-6">
+            <p class="font-extrabold text-gray-800 text-sm mb-0.5 leading-tight">${safeFolderName}</p>
+            ${folder.discount && folder.discount.value > 0 ? `<span style="background:#ef4444;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;flex-shrink:0;">-${folder.discount.type === 'percent' ? folder.discount.value + '%' : fmt(folder.discount.value)}</span>` : (globalDiscount && globalDiscount.value > 0 ? `<span style="background:#f97316;color:#fff;font-size:0.62rem;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap;flex-shrink:0;">-${globalDiscount.type === 'percent' ? globalDiscount.value + '%' : fmt(globalDiscount.value)}</span>` : '')}
+          </div>
+          <p class="text-xs text-gray-400 font-medium">
+            ${count} ${count === 1 ? 'model' : 'models'}${folder.hiddenFromSearch ? ' <span title="Hidden from advanced search" style="color:#f59e0b;font-weight:800;">• Hidden from search</span>' : ''}
+          </p>
+          ${dateStr ? `<p class="text-[10px] text-gray-300 font-medium mt-1">${escapeHtml(dateStr)}</p>` : ''}
         </div>`;
     }
 
