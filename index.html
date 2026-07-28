@@ -7841,8 +7841,8 @@ service cloud.firestore {
         const folderCount = (u.allowedFolders === null || u.allowedFolders === undefined) ? 'All folders' : (Array.isArray(u.allowedFolders) ? `${u.allowedFolders.length} folder(s)` : 'No access');
         const createdStr  = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
         const roleBadge   = isCoAdmin
-          ? '<span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">\u{1F6E0}\uFE0F \u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0627\u062F\u0645\u0646</span>'
-          : '<span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">\u{1F464} \u064A\u0648\u0632\u0631</span>';
+          ? '<span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">\u{1F6E0}\uFE0F Co-Admin</span>'
+          : '<span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">\u{1F464} User</span>';
         const safePhone = escapeHtml(phone);
         const safeUid   = escapeHtml(u.uid);
 
@@ -7872,7 +7872,7 @@ service cloud.firestore {
                 ${disabled ? '<span class="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Disabled</span>' : '<span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Active</span>'}
               </div>
               <p class="text-[10px] text-gray-400 truncate mt-0.5">${name ? '\u{1F4F1} ' + safePhoneDisplay + ' \u00B7 ' : ''}${safeFolderCount}${safeCreatedStr ? ' \u00B7 ' + safeCreatedStr : ''}</p>
-              ${activeBadges ? `<div class="flex flex-wrap gap-1 mt-1.5">${activeBadges}</div>` : '<p class="text-[9px] text-gray-300 mt-1.5">\u0644\u0627 \u062A\u0648\u062C\u062F \u0635\u0644\u0627\u062D\u064A\u0627\u062A \u0645\u0641\u0639\u0651\u0644\u0629</p>'}
+              ${activeBadges ? `<div class="flex flex-wrap gap-1 mt-1.5">${activeBadges}</div>` : '<p class="text-[9px] text-gray-300 mt-1.5">No active permissions</p>'}
             </div>
             <div class="flex flex-col items-end gap-1.5 shrink-0">
               <button onclick="openUserPermsModalFromBtn(this)"
@@ -7882,7 +7882,7 @@ service cloud.firestore {
                 data-allowed='${safeAllowed}'
                 data-perms='${safePerms}'
                 class="h-7 px-2.5 rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-bold hover:bg-indigo-100 transition-colors">
-                \u2699\uFE0F \u0635\u0644\u0627\u062D\u064A\u0627\u062A
+                \u2699\uFE0F Permissions
               </button>
               <div class="flex items-center gap-1">
                 ${disabled
