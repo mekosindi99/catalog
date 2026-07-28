@@ -2042,6 +2042,11 @@ service cloud.firestore {
           <span class="bc-sep">›</span>
           <span class="bc-current" id="breadcrumb-folder-name">Folder</span>
         </div>
+        <button id="breadcrumb-select-all-btn" type="button" onclick="window.toggleSelectAll()"
+          style="display:flex;align-items:center;gap:4px;padding:6px 10px;border-radius:10px;border:1px solid #e5d5cd;background:#fff;font-size:0.72rem;font-weight:700;color:#1a1a2e;white-space:nowrap;">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span id="breadcrumb-select-all-label">Select All</span>
+        </button>
         <button id="breadcrumb-dl-btn"
           onclick="if(window._appState && window._appState.currentFolderId){ openFolderDlModal(window._appState.currentFolderId); }"
           class="bc-dl-btn bc-zip-btn" title="ZIP - download">
@@ -5785,6 +5790,7 @@ service cloud.firestore {
         }
       }, true);
       updateSelectionBar();
+      updateSelectAllBtn();
     }
 
     function updateAdminUI() {
@@ -6342,14 +6348,24 @@ service cloud.firestore {
     });
 
     // ── Select All ──
+    // "Visible models" = whatever renderGrid actually put on screen — the current folder's
+    // models normally, or the current search results while in search mode. Reading it off the
+    // rendered cards (rather than re-deriving the filter) means Select All is automatically
+    // correct in both cases, including every filter combination search supports.
+    function getVisibleModelIds() {
+      return Array.from(document.querySelectorAll('#models-grid .model-card[data-id]')).map(el => el.getAttribute('data-id'));
+    }
     window.toggleSelectAll = function() {
-      const visibleModels = currentFolderId ? allModels.filter(m => m.folderId === currentFolderId) : allModels;
-      const allSelected=selectedIds.size===visibleModels.length&&visibleModels.length>0;
+      const visibleIds = getVisibleModelIds();
+      const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
       if(allSelected) clearSelection(); else selectAllCards();
     };
     function selectAllCards() {
-      const visibleModels = currentFolderId ? allModels.filter(m => m.folderId === currentFolderId) : allModels;
-      visibleModels.forEach(m=>{ selectedIds.add(m.id); const card=document.querySelector(`.model-card[data-id="${m.id}"]`); if(card){card.classList.add("selected");const cb=card.querySelector(".card-checkbox");if(cb)cb.checked=true;} });
+      getVisibleModelIds().forEach(id => {
+        selectedIds.add(id);
+        const card=document.querySelector(`.model-card[data-id="${id}"]`);
+        if(card){card.classList.add("selected");const cb=card.querySelector(".card-checkbox");if(cb)cb.checked=true;}
+      });
       updateSelectAllBtn();
       updateSelectionBar();
     }
@@ -6359,11 +6375,16 @@ service cloud.firestore {
     }
     window.clearCardSelection = clearSelection;
     function updateSelectAllBtn() {
-      const btn=document.getElementById("select-all-btn"); const label=document.getElementById("select-all-label"); if(!btn||!label) return;
-      const visibleModels = currentFolderId ? allModels.filter(m => m.folderId === currentFolderId) : allModels;
-      const allSelected=selectedIds.size===visibleModels.length&&visibleModels.length>0;
-      btn.style.background=allSelected?"#1a1a2e":""; btn.style.borderColor=allSelected?"#1a1a2e":""; btn.style.color=allSelected?"#fff":"";
-      label.textContent=allSelected?"Deselect":"Select All";
+      const visibleIds = getVisibleModelIds();
+      const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+      const labelText = allSelected ? "Deselect" : "Select All";
+      const btn=document.getElementById("select-all-btn"); const label=document.getElementById("select-all-label");
+      if (btn && label) {
+        btn.style.background=allSelected?"#1a1a2e":""; btn.style.borderColor=allSelected?"#1a1a2e":""; btn.style.color=allSelected?"#fff":"";
+        label.textContent=labelText;
+      }
+      const bcLabel = document.getElementById("breadcrumb-select-all-label");
+      if (bcLabel) bcLabel.textContent = labelText;
     }
     window.toggleCardSelection = function(id, checked) {
       if(checked) selectedIds.add(id); else selectedIds.delete(id);
