@@ -6282,6 +6282,32 @@ service cloud.firestore {
       renderGrid(list);
     }
 
+    // Gender/Season are free-text values the admin types into Admin Panel → App Settings →
+    // Catalog Fields, so there's no fixed list to translate properly — this is a best-effort
+    // lookup for the common values a shop like this actually uses; anything else (a value the
+    // admin invented) is shown exactly as typed, in whatever language it was typed in.
+    const CATALOG_VALUE_I18N = {
+      girls:   { ar: 'بناتي', ku: 'کچان' },
+      girl:    { ar: 'بناتي', ku: 'کچان' },
+      boys:    { ar: 'ولادي', ku: 'کوڕان' },
+      boy:     { ar: 'ولادي', ku: 'کوڕان' },
+      unisex:  { ar: 'الجميع', ku: 'هەردووک' },
+      both:    { ar: 'الجميع', ku: 'هەردووک' },
+      summer:  { ar: 'صيفي', ku: 'هاوین' },
+      winter:  { ar: 'شتوي', ku: 'زستان' },
+      spring:  { ar: 'ربيعي', ku: 'بەھار' },
+      autumn:  { ar: 'خريفي', ku: 'پاییز' },
+      fall:    { ar: 'خريفي', ku: 'پاییز' },
+      all:     { ar: 'الكل', ku: 'هەموو' },
+    };
+    function translateCatalogValue(value) {
+      if (!value) return value;
+      const lang = window._psvLang || window._appLang || 'ar';
+      if (lang === 'en') return value;
+      const hit = CATALOG_VALUE_I18N[value.trim().toLowerCase()];
+      return (hit && hit[lang]) || value;
+    }
+
     // ── Public share view language (Arabic / Kurdish Sorani / English) — the visitor picks,
     // choice remembered in localStorage, defaults to Arabic since that's this shop's main
     // customer base. Kept as a flat dict rather than a full i18n framework since this view
@@ -6419,8 +6445,8 @@ service cloud.firestore {
             pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">👤 ${escapeHtml(formatAgeTag(a))}</span>`);
           });
         }
-        if (m.gender) pills.push(`<span style="background:#fce7f3;color:#be185d;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(m.gender)}</span>`);
-        if (m.season) pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(m.season)}</span>`);
+        if (m.gender) pills.push(`<span style="background:#fce7f3;color:#be185d;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(translateCatalogValue(m.gender))}</span>`);
+        if (m.season) pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(translateCatalogValue(m.season))}</span>`);
         badgesEl.innerHTML = pills.join('');
       }
       const priceEl = document.getElementById('psv-modal-price');
