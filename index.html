@@ -6165,7 +6165,7 @@ service cloud.firestore {
     // Season/Gender options match sonbola.shop's own inventory form exactly (same spec, same
     // customer-facing categories) so a model looks the same whether it's browsed there or here.
     window._catalogOptions = {
-      categories: ['Dress','Suit','Set','Jacket','Pajama','Other'],
+      categories: ['Dress','Jacket','Set_skirt','Set_Pants','Tracksuit','Caloon','Pants','Badlason','Blouse'],
       seasons: ['صيفي','بهاري','شتوي'],
       genders: ['بناتي','ولادي','ولادي و بناتي'],
     };
@@ -6180,7 +6180,9 @@ service cloud.firestore {
         sel.innerHTML = '';
         if (placeholder) sel.appendChild(placeholder);
         values.forEach(v => {
-          const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o);
+          // Category/Type values stay stored in their canonical English spelling (so existing
+          // tagged models don't need migrating) — only the visible dropdown label is translated.
+          const o = document.createElement('option'); o.value = v; o.textContent = translateCatalogValue(v); sel.appendChild(o);
         });
         if (values.includes(current)) sel.value = current;
       });
@@ -6362,6 +6364,19 @@ service cloud.firestore {
       autumn: { ar: 'خريفي', ku: 'پاییز', en: 'Fall' },
       fall:   { ar: 'خريفي', ku: 'پاییز', en: 'Fall' },
       all:    { ar: 'الكل', ku: 'هەموو', en: 'All' },
+      // Type/Category options — corrected spellings + AR/KU labels, matching the shop's own
+      // naming (some were typos in the originally-saved Firestore list, e.g. "Bloze"→"Blouse").
+      dress:      { ar: 'فستان', ku: 'کراس', en: 'Dress' },
+      jacket:     { ar: 'جاكيت', ku: 'جاکێت', en: 'Jacket' },
+      set_skirt:  { ar: 'سيت-تنورة', ku: 'سێت-داماڵ', en: 'Set_skirt' },
+      set_pants:  { ar: 'سيت-بنطلون', ku: 'سێت-پانتۆڵ', en: 'Set_Pants' },
+      tracksuit:  { ar: 'تراكسوت', ku: 'تراكسوت', en: 'Tracksuit' },
+      track:      { ar: 'تراكسوت', ku: 'تراكسوت', en: 'Tracksuit' },
+      caloon:     { ar: 'كالون', ku: 'کالۆن', en: 'Caloon' },
+      pants:      { ar: 'بنطلون', ku: 'پانتۆڵ', en: 'Pants' },
+      badlason:   { ar: 'بدلسون', ku: 'بەدلەسۆن', en: 'Badlason' },
+      blouse:     { ar: 'بلوزة', ku: 'بلوز', en: 'Blouse' },
+      bloze:      { ar: 'بلوزة', ku: 'بلوز', en: 'Blouse' },
     };
     function translateCatalogValue(value) {
       if (!value) return value;
