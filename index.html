@@ -7856,6 +7856,46 @@ service cloud.firestore {
             <span id="catalog-options-save-status" class="text-xs font-bold"></span>
           </div>
 
+          <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 mt-6">Domain Renewal</p>
+          <p class="text-xs text-gray-400 -mt-2">Tracks when your domain (e.g. catalog.sonbola.shop) needs renewing. Set the expiry date here after each renewal — a full-screen reminder shows on every app open once it's within 30 days, until you turn it off below.</p>
+
+          <div id="domain-status-card" class="rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap" style="background:#0f2e1f;border:1px solid #1e4d36;">
+            <div class="flex items-center gap-2">
+              <div id="domain-status-icon" class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <div>
+                <p id="domain-status-text" class="text-sm font-bold text-green-300">Domain active — — days remaining</p>
+                <p id="domain-status-date" class="text-[11px] text-green-400/70"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 rounded-2xl p-4 space-y-3">
+            <p class="text-xs font-black text-gray-600">Domain Name</p>
+            <input id="settings-domain-name" type="text" placeholder="e.g. catalog.sonbola.shop" dir="ltr"
+              class="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
+            <p class="text-xs font-black text-gray-600 mt-2">Expiry Date</p>
+            <input id="settings-domain-expiry" type="date"
+              class="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
+            <label class="flex items-center gap-2.5 cursor-pointer mt-2">
+              <span class="user-toggle">
+                <input id="settings-domain-warning-enabled" type="checkbox" checked>
+                <span class="user-toggle-track"></span>
+                <span class="user-toggle-thumb"></span>
+              </span>
+              <span class="text-xs font-semibold text-gray-600">Show full-screen reminder when within 30 days of expiry</span>
+            </label>
+            <div class="flex items-center gap-3 pt-1">
+              <button onclick="saveDomainInfo()"
+                class="h-10 px-4 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold hover:bg-[#2d2d4e] transition-colors flex items-center gap-1.5 shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                Save Domain Info
+              </button>
+              <span id="domain-info-save-status" class="text-xs font-bold"></span>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -7863,6 +7903,30 @@ service cloud.firestore {
   </div>
 
   <!-- ==================== USER PERMISSIONS MODAL ==================== -->
+  <!-- ==================== DOMAIN EXPIRY REMINDER ====================
+       Shown on every app open (once past the 30-day threshold) until the admin turns it off
+       via Admin Panel → App Settings → Domain Renewal. Closing this popup only dismisses it
+       for the current visit — it is not a snooze, per the admin's own instruction that only
+       the settings toggle should be able to silence it. -->
+  <div id="domain-expiry-modal" class="fixed inset-0 z-[400] hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(4px)">
+    <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden" style="animation:modalIn 0.25s ease">
+      <div class="p-6 text-center">
+        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+        </div>
+        <h2 class="text-base font-extrabold text-gray-800 mb-1.5">Domain Renewal Reminder</h2>
+        <p id="domain-expiry-modal-text" class="text-sm text-gray-500 leading-relaxed mb-5">Your domain expires soon. Please renew it to avoid losing access.</p>
+        <button onclick="document.getElementById('domain-expiry-modal').classList.add('hidden')"
+          class="w-full h-11 bg-[#1a1a2e] text-white font-bold text-sm rounded-xl hover:bg-[#2d2d4e] transition-colors">
+          Got it
+        </button>
+        <p class="text-[11px] text-gray-400 mt-3">Turn this off in Admin Panel → App Settings → Domain Renewal.</p>
+      </div>
+    </div>
+  </div>
+
   <div id="user-perms-modal" class="fixed inset-0 z-[300] hidden items-center justify-center p-4 modal-backdrop"
     onclick="if(event.target===this) closeUserPermsModal()">
     <div class="modal-enter bg-white rounded-2xl w-full max-w-sm shadow-2xl flex flex-col max-h-[92vh]">
@@ -8019,7 +8083,7 @@ service cloud.firestore {
       if (tab === 'folders') renderAdminFolders();
       if (tab === 'users') loadManagedUsers();
       if (tab === 'sessions') loadLoginSessions();
-      if (tab === 'appsettings') loadAppSettings();
+      if (tab === 'appsettings') { loadAppSettings(); if (window.loadDomainInfo) window.loadDomainInfo(); }
     };
 
     function renderAdminOverview() {
@@ -9330,6 +9394,13 @@ service cloud.firestore {
         S.renderFolders();
         tryShowInitialView();
 
+        // Domain-expiry reminder — admin/co_admin only (it's an infrastructure concern, not
+        // something regular staff need to see). Only the toggle in Admin Panel → App Settings
+        // → Domain Renewal can turn it off.
+        if ((resolvedRole === 'admin' || resolvedRole === 'co_admin') && window.loadDomainInfo) {
+          window.loadDomainInfo().then(data => { if (typeof checkDomainExpiryWarning === 'function') checkDomainExpiryWarning(data); });
+        }
+
         // ── Check for missed notifications since last login (regular users only — not co_admin) ──
         if (window._isManagedUser && resolvedRole !== "co_admin") {
           const _notifCheckUser = user;
@@ -10186,6 +10257,89 @@ service cloud.firestore {
         if (file) window.handleLogoFileSelect(file);
       });
     });
+
+    // ── Domain renewal tracking (Admin Panel → App Settings → Domain Renewal) ──
+    window._fbSaveDomainInfo = async function(data) {
+      await setDoc(doc(db, "app_settings", "domainInfo"), data, { merge: true });
+    };
+
+    window.loadDomainInfo = async function() {
+      let data = {};
+      try {
+        const snap = await getDoc(doc(db, "app_settings", "domainInfo"));
+        if (snap.exists()) data = snap.data();
+      } catch(e) { /* not signed in yet, or doc doesn't exist */ }
+      window._domainInfo = data;
+      const nameInput = document.getElementById("settings-domain-name");
+      if (nameInput) nameInput.value = data.domainName || "";
+      const expiryInput = document.getElementById("settings-domain-expiry");
+      if (expiryInput) expiryInput.value = data.expiryDate || "";
+      const warningCheckbox = document.getElementById("settings-domain-warning-enabled");
+      if (warningCheckbox) warningCheckbox.checked = data.warningEnabled !== false;
+      renderDomainStatusCard(data);
+      return data;
+    };
+
+    function renderDomainStatusCard(data) {
+      const card = document.getElementById("domain-status-card");
+      const icon = document.getElementById("domain-status-icon");
+      const text = document.getElementById("domain-status-text");
+      const dateEl = document.getElementById("domain-status-date");
+      if (!card || !data || !data.expiryDate) {
+        if (text) text.textContent = "No expiry date set yet";
+        if (dateEl) dateEl.textContent = "";
+        return;
+      }
+      const daysLeft = Math.ceil((new Date(data.expiryDate + "T00:00:00") - new Date()) / 86400000);
+      const expired = daysLeft < 0;
+      const soon = daysLeft <= 30;
+      card.style.background = expired ? "#3a0f14" : (soon ? "#3a2a0f" : "#0f2e1f");
+      card.style.borderColor = expired ? "#5c1a22" : (soon ? "#5c451a" : "#1e4d36");
+      if (icon) icon.style.background = expired ? "#ef4444" : (soon ? "#f59e0b" : "#22c55e");
+      if (text) {
+        text.style.color = expired ? "#fca5a5" : (soon ? "#fcd34d" : "#86efac");
+        text.textContent = expired
+          ? `Domain expired ${Math.abs(daysLeft)} day(s) ago`
+          : `Domain active — ${daysLeft} day${daysLeft === 1 ? '' : 's'} remaining`;
+      }
+      if (dateEl) {
+        dateEl.style.color = expired ? "#f8717180" : (soon ? "#fbbf2480" : "#4ade8080");
+        dateEl.textContent = `Renewal date: ${data.expiryDate}`;
+      }
+    }
+
+    window.saveDomainInfo = async function() {
+      const status = document.getElementById("domain-info-save-status");
+      const domainName = document.getElementById("settings-domain-name")?.value.trim() || "";
+      const expiryDate = document.getElementById("settings-domain-expiry")?.value || "";
+      const warningEnabled = document.getElementById("settings-domain-warning-enabled")?.checked !== false;
+      try {
+        await window._fbSaveDomainInfo({ domainName, expiryDate, warningEnabled });
+        window._domainInfo = { domainName, expiryDate, warningEnabled };
+        renderDomainStatusCard(window._domainInfo);
+        if (status) { status.textContent = "Saved ✓"; status.style.color = "#16a34a"; setTimeout(() => status.textContent = "", 2000); }
+      } catch(e) {
+        if (status) { status.textContent = "Save failed"; status.style.color = "#ef4444"; }
+      }
+    };
+
+    // Shown once per app open (not a permanent dismissal — see the modal's own comment) if
+    // within 30 days of the saved expiry date and the admin hasn't turned the warning off.
+    function checkDomainExpiryWarning(data) {
+      if (!data || !data.expiryDate || data.warningEnabled === false) return;
+      const daysLeft = Math.ceil((new Date(data.expiryDate + "T00:00:00") - new Date()) / 86400000);
+      if (daysLeft > 30) return;
+      const modal = document.getElementById("domain-expiry-modal");
+      const textEl = document.getElementById("domain-expiry-modal-text");
+      if (!modal) return;
+      if (textEl) {
+        textEl.textContent = daysLeft < 0
+          ? `Your domain${data.domainName ? ' (' + data.domainName + ')' : ''} expired ${Math.abs(daysLeft)} day(s) ago. Renew it as soon as possible to avoid losing access.`
+          : `Your domain${data.domainName ? ' (' + data.domainName + ')' : ''} expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Please renew it soon to avoid losing access.`;
+      }
+      modal.style.display = "flex";
+      modal.classList.remove("hidden");
+    }
 
     // ── Load branding on startup ──
     fetchAppSettings().then(applyAppBrandingToUI);
