@@ -495,6 +495,14 @@
     .bc-gallery-btn { background: #16a34a; color: #fff; box-shadow: 0 2px 6px rgba(22,163,74,0.35); }
     .bc-gallery-btn:hover { background: #15803d; }
     .bc-dl-icon { flex-shrink: 0; }
+    /* Hides any download entry point (ZIP/Gallery buttons, selection-bar Download) for a
+       regular user whose "Download images" permission the admin has turned off — toggled by
+       updateAdminUI(), not by a fixed inline style, since these buttons use several different
+       default display values (flex/inline-flex/block) that would be easy to get wrong restoring. */
+    .download-gated.dl-denied { display: none !important; }
+    /* Clear visual feedback when a photo is selected in the public share view's bulk-select
+       mode — a colored ring around the whole card, on top of the checkmark button itself. */
+    .psv-card-outer.psv-card-selected { outline: 3px solid #16a34a; outline-offset: -3px; border-radius: 1rem; }
 
     /* Mobile-first: icon-only compact square */
     .bc-dl-btn   { width: 32px; height: 32px; padding: 0; font-size: 0; border-radius: 8px; }
@@ -2181,7 +2189,7 @@ service cloud.firestore {
         </button>
         <button id="breadcrumb-dl-btn"
           onclick="if(window._appState && window._appState.currentFolderId){ openFolderDlModal(window._appState.currentFolderId); }"
-          class="bc-dl-btn bc-zip-btn" title="ZIP - download">
+          class="bc-dl-btn bc-zip-btn download-gated" title="ZIP - download">
           <svg class="bc-dl-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
           </svg>
@@ -2189,7 +2197,7 @@ service cloud.firestore {
         </button>
         <button id="breadcrumb-gallery-btn"
           onclick="if(window._appState && window._appState.currentFolderId){ openFolderDlModalGallery(window._appState.currentFolderId); }"
-          class="bc-dl-btn bc-gallery-btn" title="Gallery - download">
+          class="bc-dl-btn bc-gallery-btn download-gated" title="Gallery - download">
           <svg class="bc-dl-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
@@ -2234,7 +2242,7 @@ service cloud.firestore {
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
       <span data-i18n="copy">Copy</span>
     </button>
-    <button type="button" onclick="window.downloadSelectedFromBar()"
+    <button type="button" onclick="window.downloadSelectedFromBar()" class="download-gated"
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#e85d3a;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
       <span data-i18n="download">Download</span>
@@ -2277,13 +2285,13 @@ service cloud.firestore {
       </span>
       <span data-i18n="ctxDetails">Details</span>
     </button>
-    <button onclick="ctxDownloadFolder()">
+    <button onclick="ctxDownloadFolder()" class="download-gated">
       <span class="menu-icon" style="background:#f59e0b20;color:#f59e0b">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
       </span>
       <span data-i18n="ctxZipDownload">ZIP - download</span>
     </button>
-    <button onclick="ctxDownloadFolderGallery()">
+    <button onclick="ctxDownloadFolderGallery()" class="download-gated">
       <span class="menu-icon" style="background:#16a34a20;color:#16a34a">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
       </span>
@@ -4788,6 +4796,13 @@ service cloud.firestore {
       }, 120);
     };
     window.openFolderDlModal = function(folderId) {
+      // Both the ZIP and Gallery download entry points (breadcrumb buttons, folder context
+      // menu) funnel through this one function, so gating it here covers all of them — the
+      // button-hiding in updateAdminUI() is just the visible half of this same permission.
+      if (!(window._canDownloadUI && window._canDownloadUI())) {
+        showToast("You don't have permission to download images", "error");
+        return;
+      }
       dlFolderId = folderId;
       dlSelectedMode = 'all';
       dlFileType = 'jpg';
@@ -6472,8 +6487,14 @@ service cloud.firestore {
       }
       const dlLabel = document.getElementById('psv-download-selected-label');
       if (dlLabel) dlLabel.textContent = t.downloadSelectedLabel;
-      document.querySelectorAll('.psv-card-checkbox').forEach(cb => {
-        cb.checked = window._psvSelectedIds.has(cb.dataset.id);
+      document.querySelectorAll('.psv-card-checkbox-wrap[data-id]').forEach(btn => {
+        const selected = window._psvSelectedIds.has(btn.dataset.id);
+        btn.classList.toggle('bg-[#16a34a]', selected);
+        btn.classList.toggle('bg-white/85', !selected);
+        const check = btn.querySelector('svg');
+        if (check) check.setAttribute('stroke', selected ? '#fff' : 'transparent');
+        const outer = btn.closest('.psv-card-outer');
+        if (outer) outer.classList.toggle('psv-card-selected', selected);
       });
     }
 
@@ -6487,8 +6508,9 @@ service cloud.firestore {
       updatePsvSelectionUI();
     };
 
-    window.togglePsvCardSelect = function(modelId, checked) {
-      if (checked) window._psvSelectedIds.add(modelId); else window._psvSelectedIds.delete(modelId);
+    window.togglePsvCardSelect = function(modelId) {
+      if (window._psvSelectedIds.has(modelId)) window._psvSelectedIds.delete(modelId);
+      else window._psvSelectedIds.add(modelId);
       updatePsvSelectionUI();
     };
 
@@ -6549,20 +6571,26 @@ service cloud.firestore {
       if (selectRow) selectRow.classList.remove('hidden');
       if (grid) {
         grid.classList.remove('hidden');
-        grid.innerHTML = models.map(m => `
+        grid.innerHTML = models.map(m => {
+          const id = escapeHtml(m.id);
+          const isSelected = window._psvSelectedIds.has(m.id);
+          return `
           <div class="flex flex-col gap-2">
-            <div class="relative" onclick="window.openPsvImageModal('${escapeHtml(m.id)}')">
+            <div class="relative psv-card-outer ${isSelected ? 'psv-card-selected' : ''}" onclick="window.openPsvImageModal('${id}')" data-model-id="${id}">
               ${cardHTML(m)}
-              <label class="psv-card-checkbox-wrap ${window._psvSelectMode ? '' : 'hidden'} absolute top-2 start-2 z-10 w-6 h-6 rounded-md bg-white/90 shadow flex items-center justify-center" onclick="event.stopPropagation()">
-                <input type="checkbox" class="psv-card-checkbox w-4 h-4 accent-[#16a34a]" data-id="${escapeHtml(m.id)}" ${window._psvSelectedIds.has(m.id) ? 'checked' : ''} onchange="window.togglePsvCardSelect('${escapeHtml(m.id)}', this.checked)">
-              </label>
+              <button type="button" data-id="${id}"
+                class="psv-card-checkbox-wrap ${window._psvSelectMode ? '' : 'hidden'} absolute top-2 start-2 z-20 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-lg transition-colors ${isSelected ? 'bg-[#16a34a]' : 'bg-white/85'}"
+                onclick="event.stopPropagation(); window.togglePsvCardSelect('${id}')">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="${isSelected ? '#fff' : 'transparent'}" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              </button>
             </div>
-            <button onclick="window.downloadPublicShareImage('${escapeHtml(m.id)}')"
+            <button onclick="window.downloadPublicShareImage('${id}')"
               class="w-full h-9 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#2d2d4e] transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               ${escapeHtml(t.downloadLabel)}
             </button>
-          </div>`).join('');
+          </div>`;
+        }).join('');
       }
       updatePsvSelectionUI();
     };
@@ -6804,6 +6832,14 @@ service cloud.firestore {
       if (bellWrap) {
         bellWrap.style.display = (isManagedUser === true && role === "user") ? "flex" : "none";
       }
+
+      // Enforce the "Download images" permission (Admin Panel → Users → permissions) on every
+      // download entry point — ZIP/Gallery buttons, folder context menu, selection-bar Download.
+      // Admin and co_admin always pass; a regular user only passes if explicitly granted.
+      const canDownload = !isLoggedIn ? false : (window._canDownloadUI ? window._canDownloadUI() : true);
+      document.querySelectorAll(".download-gated").forEach(el => {
+        el.classList.toggle("dl-denied", !canDownload);
+      });
     }
 
     // ── Auth ──
