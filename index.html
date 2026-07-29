@@ -1557,8 +1557,8 @@
       <div class="lnp-header-left">
         <div class="lnp-header-icon">🔔</div>
         <div>
-          <div class="lnp-header-title">New Updates</div>
-          <div id="lnp-header-sub" class="lnp-header-sub">Changes since your last visit</div>
+          <div class="lnp-header-title" data-i18n="newUpdates">New Updates</div>
+          <div id="lnp-header-sub" class="lnp-header-sub" data-i18n="changesSinceLastVisit">Changes since your last visit</div>
         </div>
       </div>
       <button class="lnp-close-btn" onclick="closeLoginNotifPopup()">✕</button>
@@ -1567,49 +1567,49 @@
     <!-- Tabs -->
     <div class="lnp-tabs">
       <button class="lnp-tab active" id="lnp-tab-all" onclick="switchLnpTab('all')">
-        All <span class="lnp-tab-count" id="lnp-count-all">0</span>
+        <span data-i18n="lnpAll">All</span> <span class="lnp-tab-count" id="lnp-count-all">0</span>
       </button>
       <button class="lnp-tab" id="lnp-tab-added" onclick="switchLnpTab('added')">
-        ✨ New <span class="lnp-tab-count" id="lnp-count-added">0</span>
+        ✨ <span data-i18n="lnpNew">New</span> <span class="lnp-tab-count" id="lnp-count-added">0</span>
       </button>
       <button class="lnp-tab" id="lnp-tab-updated" onclick="switchLnpTab('updated')">
-        ✏️ Updated <span class="lnp-tab-count" id="lnp-count-updated">0</span>
+        ✏️ <span data-i18n="lnpUpdated">Updated</span> <span class="lnp-tab-count" id="lnp-count-updated">0</span>
       </button>
       <button class="lnp-tab" id="lnp-tab-folder" onclick="switchLnpTab('folder')">
-        📁 Folders <span class="lnp-tab-count" id="lnp-count-folder">0</span>
+        📁 <span data-i18n="lnpFolders">Folders</span> <span class="lnp-tab-count" id="lnp-count-folder">0</span>
       </button>
     </div>
 
     <!-- Content -->
     <div class="lnp-content">
       <div id="lnp-panel-all" class="lnp-panel active">
-        <div class="lnp-empty">No updates</div>
+        <div class="lnp-empty" data-i18n="lnpNoUpdates">No updates</div>
       </div>
       <div id="lnp-panel-added" class="lnp-panel">
-        <div class="lnp-empty">No new additions</div>
+        <div class="lnp-empty" data-i18n="lnpNoNewAdditions">No new additions</div>
       </div>
       <div id="lnp-panel-updated" class="lnp-panel">
-        <div class="lnp-empty">No edits</div>
+        <div class="lnp-empty" data-i18n="lnpNoEdits">No edits</div>
       </div>
       <div id="lnp-panel-folder" class="lnp-panel">
-        <div class="lnp-empty">No folder changes</div>
+        <div class="lnp-empty" data-i18n="lnpNoFolderChanges">No folder changes</div>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="lnp-footer">
-      <button class="lnp-dismiss-btn" onclick="closeLoginNotifPopup()">Got it ✓</button>
+      <button class="lnp-dismiss-btn" onclick="closeLoginNotifPopup()" data-i18n="gotIt">Got it ✓</button>
     </div>
   </div>
 
   <!-- ══════════════ NOTIFICATION HISTORY PANEL ══════════════ -->
   <div id="notif-history-panel">
     <div class="notif-panel-head">
-      <span>🔔 Notifications</span>
-      <span id="notif-panel-clear" onclick="clearNotifHistory()">Clear All</span>
+      <span data-i18n="notificationsTitle">🔔 Notifications</span>
+      <span id="notif-panel-clear" onclick="clearNotifHistory()" data-i18n="clearAll">Clear All</span>
     </div>
     <div id="notif-history-list">
-      <div id="notif-empty-state">No new notifications</div>
+      <div id="notif-empty-state" data-i18n="noNewNotifications">No new notifications</div>
     </div>
   </div>
 
@@ -3549,6 +3549,20 @@ service cloud.firestore {
         adminPanelLabel: 'لوحة الأدمن',
         accountLabel: 'الحساب',
         signOut: 'تسجيل الخروج',
+        newUpdates: 'تحديثات جديدة',
+        changesSinceLastVisit: 'التغييرات منذ آخر زيارة',
+        lnpAll: 'الكل',
+        lnpNew: 'جديد',
+        lnpUpdated: 'معدّل',
+        lnpFolders: 'الفولدرات',
+        lnpNoUpdates: 'لا توجد تحديثات',
+        lnpNoNewAdditions: 'لا توجد إضافات جديدة',
+        lnpNoEdits: 'لا توجد تعديلات',
+        lnpNoFolderChanges: 'لا توجد تغييرات بالفولدرات',
+        gotIt: 'تمام ✓',
+        notificationsTitle: '🔔 الإشعارات',
+        clearAll: 'مسح الكل',
+        noNewNotifications: 'لا توجد إشعارات جديدة',
       },
       ku: {
         dir: 'rtl', flag: '<svg viewBox="0 0 90 60" style="width:18px;height:13px;border-radius:2px;"><rect width="90" height="60" fill="#ED1C24"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#149F4B"/><circle cx="45" cy="30" r="9" fill="#FDBB11"/><circle cx="45" cy="30" r="6.5" fill="#fff"/></svg>', code: 'KU',
@@ -3644,6 +3658,20 @@ service cloud.firestore {
         adminPanelLabel: 'پانێڵی ئەدمین',
         accountLabel: 'هەژمار',
         signOut: 'چوونەدەرەوە',
+        newUpdates: 'نوێکارییەکانی نوێ',
+        changesSinceLastVisit: 'گۆڕانکارییەکان لە دوایین سەردانەوە',
+        lnpAll: 'هەموو',
+        lnpNew: 'نوێ',
+        lnpUpdated: 'نوێکراوە',
+        lnpFolders: 'فۆڵدەرەکان',
+        lnpNoUpdates: 'هیچ نوێکارییەک نییە',
+        lnpNoNewAdditions: 'هیچ زیادکراوێکی نوێ نییە',
+        lnpNoEdits: 'هیچ دەستکارییەک نییە',
+        lnpNoFolderChanges: 'هیچ گۆڕانکارییەکی فۆڵدەر نییە',
+        gotIt: 'باشە ✓',
+        notificationsTitle: '🔔 ئاگادارییەکان',
+        clearAll: 'سڕینەوەی هەموو',
+        noNewNotifications: 'هیچ ئاگاداریەکی نوێ نییە',
       },
       en: {
         dir: 'ltr', flag: '🇺🇸', code: 'EN',
@@ -3739,6 +3767,20 @@ service cloud.firestore {
         adminPanelLabel: 'Admin Panel',
         accountLabel: 'Account',
         signOut: 'Sign Out',
+        newUpdates: 'New Updates',
+        changesSinceLastVisit: 'Changes since your last visit',
+        lnpAll: 'All',
+        lnpNew: 'New',
+        lnpUpdated: 'Updated',
+        lnpFolders: 'Folders',
+        lnpNoUpdates: 'No updates',
+        lnpNoNewAdditions: 'No new additions',
+        lnpNoEdits: 'No edits',
+        lnpNoFolderChanges: 'No folder changes',
+        gotIt: 'Got it ✓',
+        notificationsTitle: '🔔 Notifications',
+        clearAll: 'Clear All',
+        noNewNotifications: 'No new notifications',
       },
     };
     window._appLang = localStorage.getItem('appLang') || 'ar';
