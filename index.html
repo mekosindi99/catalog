@@ -1836,13 +1836,36 @@
           <img src="" alt="" id="psv-logo-img" class="w-full h-full object-cover hidden">
         </div>
         <span id="psv-app-name" class="font-extrabold text-gray-800 text-sm">Catalog</span>
-        <div class="ms-auto flex items-center gap-1" id="psv-lang-switch">
-          <button type="button" onclick="window.setPsvLanguage('ar')" data-psv-lang-btn="ar"
-            class="px-2.5 py-1 rounded-lg text-xs font-bold transition-colors">عربي</button>
-          <button type="button" onclick="window.setPsvLanguage('ku')" data-psv-lang-btn="ku"
-            class="px-2.5 py-1 rounded-lg text-xs font-bold transition-colors">کوردی</button>
-          <button type="button" onclick="window.setPsvLanguage('en')" data-psv-lang-btn="en"
-            class="px-2.5 py-1 rounded-lg text-xs font-bold transition-colors">EN</button>
+        <div class="ms-auto relative" id="psv-lang-switch">
+          <button type="button" onclick="window.togglePsvLangMenu()"
+            class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <span id="psv-lang-current-flag" class="text-base leading-none"></span>
+            <span id="psv-lang-current-code" class="text-xs font-bold text-gray-600"></span>
+            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="psv-lang-menu" class="hidden absolute end-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+            <button type="button" onclick="window.setPsvLanguage('ar')" data-psv-lang-btn="ar"
+              class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors">
+              <span class="w-4 text-center" data-psv-lang-check>✓</span>
+              <span class="text-base leading-none">🇮🇶</span>
+              <span class="flex-1 text-start font-semibold text-gray-700">العربية</span>
+              <span class="text-[10px] text-gray-400 font-bold">IQ</span>
+            </button>
+            <button type="button" onclick="window.setPsvLanguage('ku')" data-psv-lang-btn="ku"
+              class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors">
+              <span class="w-4 text-center" data-psv-lang-check>✓</span>
+              <span class="text-base leading-none">🇮🇶</span>
+              <span class="flex-1 text-start font-semibold text-gray-700">کوردی</span>
+              <span class="text-[10px] text-gray-400 font-bold">KU</span>
+            </button>
+            <button type="button" onclick="window.setPsvLanguage('en')" data-psv-lang-btn="en"
+              class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors">
+              <span class="w-4 text-center" data-psv-lang-check>✓</span>
+              <span class="text-base leading-none">🇺🇸</span>
+              <span class="flex-1 text-start font-semibold text-gray-700">English</span>
+              <span class="text-[10px] text-gray-400 font-bold">US</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -5746,7 +5769,7 @@ service cloud.firestore {
     // only has a handful of static strings. ──
     const PSV_I18N = {
       ar: {
-        dir: 'rtl',
+        dir: 'rtl', flag: '🇮🇶', code: 'AR',
         bannerText: '📤 تقدر تشارك هذي الصور مع أصدقائك!',
         shareLabel: 'مشاركة',
         copiedLabel: 'تم النسخ ✓',
@@ -5756,7 +5779,7 @@ service cloud.firestore {
         downloadLabel: 'تحميل',
       },
       ku: {
-        dir: 'rtl',
+        dir: 'rtl', flag: '🇮🇶', code: 'KU',
         bannerText: '📤 دەتوانیت ئەم وێنانە لەگەڵ هاوڕێکانت هاوبەش بکەیت!',
         shareLabel: 'هاوبەشکردن',
         copiedLabel: 'کۆپی کرا ✓',
@@ -5766,7 +5789,7 @@ service cloud.firestore {
         downloadLabel: 'داگرتن',
       },
       en: {
-        dir: 'ltr',
+        dir: 'ltr', flag: '🇺🇸', code: 'EN',
         bannerText: '📤 You can share these photos with your friends!',
         shareLabel: 'Share',
         copiedLabel: 'Copied ✓',
@@ -5778,11 +5801,23 @@ service cloud.firestore {
     };
     window._psvLang = localStorage.getItem('psvLang') || 'ar';
 
+    window.togglePsvLangMenu = function() {
+      const menu = document.getElementById('psv-lang-menu');
+      if (menu) menu.classList.toggle('hidden');
+    };
+    document.addEventListener('click', (e) => {
+      const wrap = document.getElementById('psv-lang-switch');
+      const menu = document.getElementById('psv-lang-menu');
+      if (wrap && menu && !wrap.contains(e.target)) menu.classList.add('hidden');
+    });
+
     window.setPsvLanguage = function(lang) {
       if (!PSV_I18N[lang]) return;
       window._psvLang = lang;
       localStorage.setItem('psvLang', lang);
       applyPsvLanguage();
+      const menu = document.getElementById('psv-lang-menu');
+      if (menu) menu.classList.add('hidden');
       // Re-render so the Download button labels (baked into the grid's innerHTML) pick up
       // the new language too — cheap since it's just re-stamping the same models.
       if (allModels.length) window.renderPublicShareModels(allModels, allFolders);
@@ -5801,10 +5836,15 @@ service cloud.firestore {
       if (loading) loading.textContent = t.loadingText;
       const empty = document.getElementById('psv-empty');
       if (empty) empty.textContent = t.emptyText;
+      const curFlag = document.getElementById('psv-lang-current-flag');
+      if (curFlag) curFlag.textContent = t.flag;
+      const curCode = document.getElementById('psv-lang-current-code');
+      if (curCode) curCode.textContent = t.code;
       document.querySelectorAll('[data-psv-lang-btn]').forEach(btn => {
         const active = btn.getAttribute('data-psv-lang-btn') === window._psvLang;
-        btn.style.background = active ? '#1a1a2e' : 'transparent';
-        btn.style.color = active ? '#fff' : '#9ca3af';
+        const check = btn.querySelector('[data-psv-lang-check]');
+        if (check) check.style.visibility = active ? 'visible' : 'hidden';
+        btn.style.background = active ? '#f9fafb' : 'transparent';
       });
     }
 
