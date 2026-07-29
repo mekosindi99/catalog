@@ -8916,15 +8916,25 @@ service cloud.firestore {
       return ref;
     };
 
-    // ── Create a short public share link: writes the model id list to "shared_links" and
-    // returns the new doc's id, which becomes the whole "?s=" query value (short, opaque,
-    // doesn't look like a phishing link the way a long comma-separated id list did).
+    // ── Create a short public share link: writes the model id list to "shared_links" under a
+    // short, self-generated code (Firestore's own auto-ids are 20 chars — too long for a clean
+    // "?s=" link), retrying on the astronomically rare collision.
     window._fbCreateShareLink = async function(modelIds) {
-      const ref = await addDoc(collection(db, "shared_links"), {
-        modelIds,
-        createdAt: serverTimestamp(),
-      });
-      return ref.id;
+      const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"; // no 0/O/1/l/I
+      const makeCode = () => {
+        let s = "";
+        for (let i = 0; i < 7; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+        return s;
+      };
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const code = makeCode();
+        const ref = doc(db, "shared_links", code);
+        const existing = await getDoc(ref).catch(() => null);
+        if (existing && existing.exists()) continue;
+        await setDoc(ref, { modelIds, createdAt: serverTimestamp() });
+        return code;
+      }
+      throw new Error("Could not generate a unique short link code");
     };
 
     // ── Duplicate models into a new folder ──
