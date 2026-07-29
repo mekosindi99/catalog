@@ -7875,14 +7875,20 @@ service cloud.firestore {
           <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 mt-6">Domain Renewal</p>
           <p class="text-xs text-gray-400 -mt-2">Tracks when your domain (e.g. catalog.sonbola.shop) needs renewing. Set the expiry date here after each renewal — a full-screen reminder shows on every app open once it's within 30 days, until you turn it off below.</p>
 
-          <div id="domain-status-card" class="rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap" style="background:#0f2e1f;border:1px solid #1e4d36;">
-            <div class="flex items-center gap-2">
-              <div id="domain-status-icon" class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center shrink-0">
-                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          <div id="domain-status-card" class="rounded-full pe-2 ps-1 py-1 flex items-center justify-between gap-3 flex-wrap" style="background:#0f2e1f;border:1px solid #1e4d36;">
+            <button id="domain-renew-early-btn" type="button" onclick="window.open(window._domainInfo && window._domainInfo.registrarUrl || 'https://porkbun.com', '_blank')"
+              class="shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition-colors"
+              style="background:#134a2e;color:#4ade80;">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Renew Early
+            </button>
+            <div class="flex items-center gap-2 flex-1 min-w-0 justify-end text-end">
+              <div class="min-w-0">
+                <p id="domain-status-text" class="text-sm font-bold text-green-300 truncate">Domain active — — days remaining</p>
+                <p id="domain-status-date" class="text-[11px] text-green-400/70 truncate"></p>
               </div>
-              <div>
-                <p id="domain-status-text" class="text-sm font-bold text-green-300">Domain active — — days remaining</p>
-                <p id="domain-status-date" class="text-[11px] text-green-400/70"></p>
+              <div id="domain-status-icon" class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
               </div>
             </div>
           </div>
@@ -10302,6 +10308,7 @@ service cloud.firestore {
       const icon = document.getElementById("domain-status-icon");
       const text = document.getElementById("domain-status-text");
       const dateEl = document.getElementById("domain-status-date");
+      const renewBtn = document.getElementById("domain-renew-early-btn");
       if (!card || !data || !data.expiryDate) {
         if (text) text.textContent = "No expiry date set yet";
         if (dateEl) dateEl.textContent = "";
@@ -10313,6 +10320,10 @@ service cloud.firestore {
       card.style.background = expired ? "#3a0f14" : (soon ? "#3a2a0f" : "#0f2e1f");
       card.style.borderColor = expired ? "#5c1a22" : (soon ? "#5c451a" : "#1e4d36");
       if (icon) icon.style.background = expired ? "#ef4444" : (soon ? "#f59e0b" : "#22c55e");
+      if (renewBtn) {
+        renewBtn.style.background = expired ? "#4a1319" : (soon ? "#4a3413" : "#134a2e");
+        renewBtn.style.color = expired ? "#fca5a5" : (soon ? "#fcd34d" : "#4ade80");
+      }
       if (text) {
         text.style.color = expired ? "#fca5a5" : (soon ? "#fcd34d" : "#86efac");
         text.textContent = expired
