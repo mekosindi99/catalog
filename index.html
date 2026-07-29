@@ -1813,6 +1813,26 @@
     </div>
   </div>
 
+  <!-- ==================== PUBLIC SHARE VIEW (?share=id,id,...) ====================
+       Read-only, no login required, no editing controls anywhere. Shown INSTEAD of the
+       login gate and the normal app when the URL carries a curated model list — see
+       window._isPublicShareView / window._shareModelIds set above. -->
+  <div id="public-share-view" class="hidden fixed inset-0 z-[9999] overflow-y-auto" style="background:#fdf6f0;">
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-10">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
+          <img src="" alt="" id="psv-logo-img" class="w-full h-full object-cover hidden">
+        </div>
+        <span id="psv-app-name" class="font-extrabold text-gray-800 text-sm">Catalog</span>
+      </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-3 sm:px-6 py-5">
+      <div id="psv-loading" class="text-center text-gray-400 text-sm py-16">Loading...</div>
+      <div id="psv-empty" class="hidden text-center text-gray-400 text-sm py-16">This link has no items to show.</div>
+      <div id="psv-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"></div>
+    </main>
+  </div>
+
   <!-- FIREBASE RULES BANNER -->
   <div id="rules-banner" class="hidden bg-amber-50 border-b-2 border-amber-300">
     <div class="max-w-3xl mx-auto px-4 py-4">
@@ -2095,6 +2115,11 @@ service cloud.firestore {
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#e85d3a;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
       Download
+    </button>
+    <button type="button" onclick="window.getPublicShareLink()" title="A public link the customer can open without an account — view + download only"
+      style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#16a34a;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5"/></svg>
+      Get Link
     </button>
     <button type="button" onclick="window.clearCardSelection()" title="Clear selection"
       style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,0.1);color:#fff;">
@@ -3367,8 +3392,16 @@ service cloud.firestore {
     let currentSort    = 'serial'; // serial | code-asc | code-desc | date-new | date-old | price-high | price-low
     // true when opened via a view-only share link (?folder=X without &signin=1)
     const _urlParams   = new URLSearchParams(window.location.search);
-    const viewOnlyMode = !!_urlParams.get('folder') && _urlParams.get('signin') !== '1';
+    const viewOnlyMode = (!!_urlParams.get('folder') && _urlParams.get('signin') !== '1') || (_urlParams.get('share') || '').length > 0;
     window._viewOnlyMode = viewOnlyMode; // expose for module-scoped scripts (which don't share this classic script's lexical scope)
+    // ?share=<id>,<id>,... — a curated multi-model link, possibly spanning several folders.
+    // Sanitized to Firestore's own doc-id charset (letters/digits/_/-, max 1500 bytes) before
+    // ever being used in a getDoc() call — the module script does the actual fetching.
+    const _shareModelIds = (_urlParams.get('share') || '')
+      .split(',').map(s => s.trim()).filter(id => /^[A-Za-z0-9_-]{1,64}$/.test(id)).slice(0, 60);
+    window._shareModelIds = _shareModelIds;
+    const isPublicShareView = _shareModelIds.length > 0;
+    window._isPublicShareView = isPublicShareView;
     let selectedIds    = new Set();
     let ageTags        = [];
     let isSaving       = false;
@@ -5666,6 +5699,55 @@ service cloud.firestore {
       renderGrid(list);
     }
 
+    // ── Public share view (?share=id,id,...) — read-only, no login. Reuses cardHTML
+    // (already suppresses every edit/checkbox control when viewOnlyMode is true, which the
+    // ?share= param sets) and adds one Download button per card. models/folders here come
+    // from individual getDoc() calls the module script made (public "get" is allowed by the
+    // Firestore rules; "list"/browsing is not, so this never exposes more than the specific
+    // ids in the link). ──
+    window.renderPublicShareModels = function(models, folders) {
+      allModels = models;
+      allFolders = folders;
+      const loading = document.getElementById('psv-loading');
+      const empty   = document.getElementById('psv-empty');
+      const grid    = document.getElementById('psv-grid');
+      if (loading) loading.classList.add('hidden');
+      if (!models.length) {
+        if (empty) empty.classList.remove('hidden');
+        return;
+      }
+      if (grid) {
+        grid.classList.remove('hidden');
+        grid.innerHTML = models.map(m => `
+          <div class="flex flex-col gap-2">
+            ${cardHTML(m)}
+            <button onclick="window.downloadPublicShareImage('${escapeHtml(m.id)}')"
+              class="w-full h-9 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#2d2d4e] transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download
+            </button>
+          </div>`).join('');
+      }
+    };
+
+    window.downloadPublicShareImage = async function(modelId) {
+      const m = allModels.find(x => x.id === modelId);
+      if (!m) return;
+      try {
+        const blob = await renderBadgedImageBlob(m, 'all');
+        if (!blob) return;
+        const filename = `${m.modelCode || 'model'}.jpg`;
+        const savedNatively = await window.saveBlobToDevice(blob, filename, true);
+        if (!savedNatively) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 400);
+        }
+      } catch (e) { console.error('public share download failed:', e); }
+    };
+
     function renderGrid(models) {
       const grid  = document.getElementById("models-grid");
       const empty = document.getElementById("empty-state");
@@ -6436,19 +6518,28 @@ service cloud.firestore {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // How many items land in the row a given index belongs to — the last row is often
+      // short (e.g. 5 models at 3 columns leaves 2 in the last row). Instead of leaving the
+      // remaining cell(s) blank, that row's cells stretch to fill the full canvas width.
+      const itemsInLastRow = models.length - cols * (rows - 1);
+
       for (let i = 0; i < models.length; i++) {
         const blob = await renderBadgedImageBlob(models[i], 'all');
         if (!blob) continue;
         const bmp = await createImageBitmap(blob);
         const col = i % cols, row = Math.floor(i / cols);
-        const x = gap + col * (cellW + gap), y = gap + row * (cellH + gap);
+        const isLastRow = row === rows - 1;
+        const rowCols = isLastRow ? itemsInLastRow : cols;
+        const thisCellW = isLastRow ? (canvas.width - (rowCols + 1) * gap) / rowCols : cellW;
+        const x = isLastRow ? (gap + col * (thisCellW + gap)) : (gap + col * (cellW + gap));
+        const y = gap + row * (cellH + gap);
         // "cover" fit — scale to fill the cell and center-crop, like CSS object-fit:cover,
         // so every cell looks uniform regardless of the source photo's own aspect ratio.
-        const scale = Math.max(cellW / bmp.width, cellH / bmp.height);
+        const scale = Math.max(thisCellW / bmp.width, cellH / bmp.height);
         const dw = bmp.width * scale, dh = bmp.height * scale;
-        const dx = x - (dw - cellW) / 2, dy = y - (dh - cellH) / 2;
+        const dx = x - (dw - thisCellW) / 2, dy = y - (dh - cellH) / 2;
         ctx.save();
-        ctx.beginPath(); ctx.rect(x, y, cellW, cellH); ctx.clip();
+        ctx.beginPath(); ctx.rect(x, y, thisCellW, cellH); ctx.clip();
         ctx.drawImage(bmp, dx, dy, dw, dh);
         ctx.restore();
       }
@@ -6509,6 +6600,31 @@ service cloud.firestore {
       } catch (e) {
         console.error('shareCollage failed:', e);
         setStatus('Failed to build collage');
+      }
+    };
+
+    // Builds a public, no-login-required link showing exactly the selected models — they can
+    // span any number of different folders, since it's the model ids themselves in the URL,
+    // not a folder id. The recipient can view and download (badged) images but has no way to
+    // edit, delete, or reach any admin feature — that whole surface simply isn't loaded for
+    // this view (see #public-share-view / window._isPublicShareView).
+    window.getPublicShareLink = async function() {
+      if (!selectedIds.size) return;
+      const setStatus = (msg) => {
+        const el = document.getElementById('selection-bar-status');
+        if (el) el.textContent = msg;
+      };
+      const ids = Array.from(selectedIds);
+      const url = `${window.location.origin}${window.location.pathname}?share=${ids.map(encodeURIComponent).join(',')}`;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+          setStatus(`Link copied (${ids.length} models) ✓`);
+        } else {
+          window.prompt('Copy this link:', url);
+        }
+      } catch (e) {
+        window.prompt('Copy this link:', url);
       }
     };
 
@@ -8842,6 +8958,9 @@ service cloud.firestore {
 
     // ── Auth state ──
     onAuthStateChanged(auth, async (user) => {
+      // Public share links (?share=id,id,...) are a fully separate, read-only view booted
+      // independently below — never touch the login gate or the normal signed-in app here.
+      if (window._isPublicShareView) return;
       if (user) {
         window._awaitingUserCheck = true;
         const userEmail = (user.email || "").toLowerCase().trim();
@@ -9611,11 +9730,15 @@ service cloud.firestore {
       }
 
       // App name
-      ["app-name-display","gate-app-name"].forEach(id => {
+      ["app-name-display","gate-app-name","psv-app-name"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = appName;
       });
       document.title = appName;
+
+      // Public share view logo (same source as everywhere else)
+      const psvImg = document.getElementById("psv-logo-img");
+      if (psvImg && logoUrl) { psvImg.src = logoUrl; psvImg.classList.remove("hidden"); }
 
       // Background colors (admin-configurable) — applied as CSS variables so #folder-interior
       // can use a different color from the rest of the page without duplicating the rule.
@@ -9774,6 +9897,36 @@ service cloud.firestore {
 
     // ── Load branding on startup ──
     fetchAppSettings().then(applyAppBrandingToUI);
+
+    // ── Public share view (?share=id,id,...) boot ──
+    // Runs independently of auth state: the Firestore rules allow a public "get" of a single
+    // model/folder document by its known id (not "list"/browsing), so this only ever reveals
+    // the exact ids present in the link — never the rest of the catalog.
+    if (window._isPublicShareView) {
+      const gate = document.getElementById('login-gate');
+      if (gate) gate.style.display = 'none';
+      const psv = document.getElementById('public-share-view');
+      if (psv) psv.classList.remove('hidden');
+
+      (async () => {
+        try {
+          const ids = window._shareModelIds || [];
+          const modelDocs = await Promise.all(ids.map(id => getDoc(doc(db, 'models', id)).catch(() => null)));
+          const models = modelDocs
+            .filter(d => d && d.exists())
+            .map(d => ({ id: d.id, ...d.data() }));
+          const folderIds = [...new Set(models.map(m => m.folderId).filter(Boolean))];
+          const folderDocs = await Promise.all(folderIds.map(id => getDoc(doc(db, 'folders', id)).catch(() => null)));
+          const folders = folderDocs
+            .filter(d => d && d.exists())
+            .map(d => ({ id: d.id, ...d.data() }));
+          window.renderPublicShareModels(models, folders);
+        } catch (e) {
+          console.error('public share load failed:', e);
+          window.renderPublicShareModels([], []);
+        }
+      })();
+    }
 
     // ── Admin-configurable Type/Season/Gender option lists ──
     window._fbSaveCatalogOptions = async function(data) {
