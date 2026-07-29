@@ -1827,6 +1827,14 @@
       </div>
     </header>
     <main class="max-w-5xl mx-auto px-3 sm:px-6 py-5">
+      <div id="psv-share-banner" class="hidden mb-4 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 flex-wrap" style="background:#eff6ff;border:1px solid #bfdbfe;">
+        <span class="text-sm font-semibold text-blue-900">📤 You can share these photos with your friends!</span>
+        <button type="button" onclick="window.sharePublicShareLink()"
+          class="h-9 px-4 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+          <span id="psv-share-btn-label">Share</span>
+        </button>
+      </div>
       <div id="psv-loading" class="text-center text-gray-400 text-sm py-16">Loading...</div>
       <div id="psv-empty" class="hidden text-center text-gray-400 text-sm py-16">This link has no items to show.</div>
       <div id="psv-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"></div>
@@ -5716,6 +5724,8 @@ service cloud.firestore {
         if (empty) empty.classList.remove('hidden');
         return;
       }
+      const banner = document.getElementById('psv-share-banner');
+      if (banner) banner.classList.remove('hidden');
       if (grid) {
         grid.classList.remove('hidden');
         grid.innerHTML = models.map(m => `
@@ -5746,6 +5756,25 @@ service cloud.firestore {
           setTimeout(() => URL.revokeObjectURL(url), 400);
         }
       } catch (e) { console.error('public share download failed:', e); }
+    };
+
+    // Lets the anonymous visitor forward this exact same link onward — the link itself has
+    // no expiry or per-recipient limit, so this can pass through any number of people.
+    window.sharePublicShareLink = async function() {
+      const url = window.location.href;
+      const label = document.getElementById('psv-share-btn-label');
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: document.title, text: 'Check out these items', url });
+          return;
+        } catch (e) { /* user cancelled, or unsupported — fall through to copy */ }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        if (label) { const prev = label.textContent; label.textContent = 'Copied ✓'; setTimeout(() => { label.textContent = prev; }, 1800); }
+      } catch (e) {
+        window.prompt('Copy this link:', url);
+      }
     };
 
     function renderGrid(models) {
