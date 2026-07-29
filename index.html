@@ -500,6 +500,7 @@
        updateAdminUI(), not by a fixed inline style, since these buttons use several different
        default display values (flex/inline-flex/block) that would be easy to get wrong restoring. */
     .download-gated.dl-denied { display: none !important; }
+    .share-gated.dl-denied { display: none !important; }
     /* Clear visual feedback when a photo is selected in the public share view's bulk-select
        mode — a colored ring around the whole card, on top of the checkmark button itself. */
     .psv-card-outer.psv-card-selected { outline: 3px solid #16a34a; outline-offset: -3px; border-radius: 1rem; }
@@ -2252,7 +2253,7 @@ service cloud.firestore {
        files handed to WhatsApp/any app) and Download (ZIP of the selected images). -->
   <div id="selection-bar" class="hidden">
     <span id="selection-bar-count" class="text-xs font-bold" style="white-space:nowrap;">0 selected</span>
-    <button type="button" onclick="window.copySelectedImages()"
+    <button type="button" onclick="window.copySelectedImages()" class="share-gated"
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#2d2d4e;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
       <span data-i18n="copy">Copy</span>
@@ -2262,7 +2263,7 @@ service cloud.firestore {
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
       <span data-i18n="download">Download</span>
     </button>
-    <button type="button" onclick="window.getPublicShareLink()" title="A public link the customer can open without an account — view + download only"
+    <button type="button" onclick="window.getPublicShareLink()" title="A public link the customer can open without an account — view + download only" class="share-gated"
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#16a34a;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5"/></svg>
       <span data-i18n="getLink">Get Link</span>
@@ -6898,6 +6899,12 @@ service cloud.firestore {
       document.querySelectorAll(".download-gated").forEach(el => {
         el.classList.toggle("dl-denied", !canDownload);
       });
+      // Same idea, but for the separate "Share" permission (copy/native share sheet) — a
+      // different toggle from "Download images" in the admin's per-user permission list.
+      const canShare = !isLoggedIn ? false : (window._canShareUI ? window._canShareUI() : true);
+      document.querySelectorAll(".share-gated").forEach(el => {
+        el.classList.toggle("dl-denied", !canShare);
+      });
     }
 
     // ── Auth ──
@@ -7526,6 +7533,10 @@ service cloud.firestore {
 
     window.copySelectedImages = async function() {
       if (!selectedIds.size) return;
+      if (!(window._canShareUI && window._canShareUI())) {
+        showToast("You don't have permission to share images", "error");
+        return;
+      }
       const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
       if (!models.length) return;
 
@@ -7548,6 +7559,14 @@ service cloud.firestore {
     // this view (see #public-share-view / window._isPublicShareView).
     window.getPublicShareLink = async function() {
       if (!selectedIds.size) return;
+      // Creating a public link is at least as sensitive as the in-app "Copy" share sheet (it
+      // exposes the selected models to anyone with the URL, no login required), so it rides on
+      // the same "canShare" permission — was previously ungated entirely, letting a restricted
+      // regular user hand out a public link even with sharing explicitly turned off for them.
+      if (!(window._canShareUI && window._canShareUI())) {
+        showToast("You don't have permission to share images", "error");
+        return;
+      }
       const setStatus = (msg) => {
         const el = document.getElementById('selection-bar-status');
         if (el) el.textContent = msg;
@@ -7942,6 +7961,14 @@ service cloud.firestore {
 
     // ── Gallery Download: sequential direct downloads, no ZIP ──
     window.dlAsGallery = async function(mode) {
+      // Both real trigger paths for this — the folder ZIP/Gallery modal's confirm button
+      // (already gated at openFolderDlModal) AND downloadSelectedFromBar, which calls this
+      // directly and was NOT gated — funnel through here, so checking it in this one place
+      // closes the gap rather than relying only on the button being hidden in the UI.
+      if (!(window._canDownloadUI && window._canDownloadUI())) {
+        showToast("You don't have permission to download images", "error");
+        return;
+      }
       const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
       if (!models.length) { showToast("No models selected", "error"); return; }
 
