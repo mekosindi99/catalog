@@ -7831,13 +7831,19 @@ service cloud.firestore {
       showGalleryProgress(models.length);
 
       let done = 0;
+      // Pipeline the network fetch + canvas render for the NEXT photo while the CURRENT one is
+      // being saved (native bridge call / file write) — those two steps don't depend on each
+      // other, so overlapping them cuts the total wait roughly in half instead of doing every
+      // photo's fetch-then-save fully back to back.
+      let _nextBlobPromise = models.length ? renderBadgedImageBlob(models[0], mode) : null;
       for (let _i = 0; _i < models.length; _i++) {
         const m = models[_i];
         const _seq = String(_i + 1).padStart(Math.max(padLen, 2), '0');
         if (_galleryCancelled) break;
         try {
           updateGalleryProgress(done, models.length, m.modelCode || ('Image ' + (_i+1)));
-          const blob = await renderBadgedImageBlob(m, mode);
+          const blob = await _nextBlobPromise;
+          if (_i + 1 < models.length) _nextBlobPromise = renderBadgedImageBlob(models[_i + 1], mode);
           if (!blob) continue;
 
           // Save image — Android app bridge first (saves straight into the phone's
