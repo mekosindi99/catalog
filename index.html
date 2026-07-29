@@ -5908,9 +5908,23 @@ service cloud.firestore {
     function cleanAgeStr(raw) {
       return (raw||'').replace(/year\s*/g,'').replace(/\s*year/g,'').replace(/years?\s*/gi,'').replace(/\s*years?/gi,'').trim();
     }
+    // Single source of truth for turning a stored age tag ("1y_7y") into display text —
+    // used by the card badge, the public-share popup, AND the canvas-drawn badges burned into
+    // downloaded/exported images, so translating it here updates every one of those at once,
+    // for every role (admin, co_admin, user, anonymous share visitor) with no separate copies
+    // to keep in sync.
+    const AGE_UNIT_I18N = {
+      y: { ar: 'سنة', ku: 'ساڵ', en: 'year' },
+      m: { ar: 'شهر', ku: 'مانگ', en: 'month' },
+    };
+    function ageUnitWord(u) {
+      const lang = window._psvLang || window._appLang || 'ar';
+      const hit = AGE_UNIT_I18N[(u || '').toLowerCase()];
+      return (hit && hit[lang]) || u;
+    }
     function formatAgeTag(tag) {
       const m = tag.match(/^(\d+)([my])_(\d+)([my])$/i);
-      if (m) return `${m[1]}${m[2]} – ${m[3]}${m[4]}`;
+      if (m) return `${m[1]} ${ageUnitWord(m[2])} – ${m[3]} ${ageUnitWord(m[4])}`;
       const l = tag.match(/^(\d+)_(\d+)$/);
       if (l) return `${l[1]} – ${l[2]}`;
       // Unrecognized shape — this string gets inserted straight into card HTML by callers
