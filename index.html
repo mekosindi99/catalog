@@ -3576,6 +3576,8 @@ service cloud.firestore {
         addRange: 'أضف فترة',
         ageFrom: 'من',
         ageTo: 'إلى',
+        ageYear: 'سنة',
+        ageMonth: 'شهر',
         price: 'السعر *',
         type: 'النوع',
         season: 'الموسم',
@@ -3710,6 +3712,8 @@ service cloud.firestore {
         addRange: 'ماوە زیاد بکە',
         ageFrom: 'لە',
         ageTo: 'بۆ',
+        ageYear: 'ساڵ',
+        ageMonth: 'مانگ',
         price: 'نرخ *',
         type: 'جۆر',
         season: 'وەرز',
@@ -3844,6 +3848,8 @@ service cloud.firestore {
         addRange: 'Add range',
         ageFrom: 'from',
         ageTo: 'to',
+        ageYear: 'year',
+        ageMonth: 'month',
         price: 'Price *',
         type: 'Type',
         season: 'Season',
@@ -6945,6 +6951,12 @@ service cloud.firestore {
       if (!wrap) return;
       const fromLabel = window.t ? window.t('ageFrom') : 'from';
       const toLabel = window.t ? window.t('ageTo') : 'to';
+      // The unit dropdown shows a full translated word (سنة/شهر, ساڵ/مانگ, year/month) matching
+      // sonbola.shop's own form — but the option VALUE stays the single-letter "y"/"m" the rest
+      // of the app already parses everywhere (badges, filters, exports), so nothing else needs
+      // to change to support this.
+      const yearLabel = window.t ? window.t('ageYear') : 'year';
+      const monthLabel = window.t ? window.t('ageMonth') : 'month';
       wrap.innerHTML = ageRangeRows.map((row, i) => `
         <div class="flex items-center gap-1.5 age-range-row">
           <input type="number" min="0" max="99" placeholder="${escapeHtml(fromLabel)}" value="${escapeHtml(row.fromNum || '')}"
@@ -6952,8 +6964,8 @@ service cloud.firestore {
             class="age-from-num w-16 h-10 px-2 text-center rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
           <select onchange="window.syncAgeRanges()"
             class="age-from-unit h-10 px-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition cursor-pointer">
-            <option value="y" ${row.fromUnit !== 'm' ? 'selected' : ''}>y</option>
-            <option value="m" ${row.fromUnit === 'm' ? 'selected' : ''}>m</option>
+            <option value="y" ${row.fromUnit !== 'm' ? 'selected' : ''}>${escapeHtml(yearLabel)}</option>
+            <option value="m" ${row.fromUnit === 'm' ? 'selected' : ''}>${escapeHtml(monthLabel)}</option>
           </select>
           <span class="text-gray-400 font-bold text-base">—</span>
           <input type="number" min="0" max="99" placeholder="${escapeHtml(toLabel)}" value="${escapeHtml(row.toNum || '')}"
@@ -6961,8 +6973,8 @@ service cloud.firestore {
             class="age-to-num w-16 h-10 px-2 text-center rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
           <select onchange="window.syncAgeRanges()"
             class="age-to-unit h-10 px-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition cursor-pointer">
-            <option value="y" ${row.toUnit !== 'm' ? 'selected' : ''}>y</option>
-            <option value="m" ${row.toUnit === 'm' ? 'selected' : ''}>m</option>
+            <option value="y" ${row.toUnit !== 'm' ? 'selected' : ''}>${escapeHtml(yearLabel)}</option>
+            <option value="m" ${row.toUnit === 'm' ? 'selected' : ''}>${escapeHtml(monthLabel)}</option>
           </select>
           ${ageRangeRows.length > 1 ? `<button type="button" onclick="window.removeAgeRangeRow(${i})"
             class="w-9 h-9 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center shrink-0">
