@@ -6695,11 +6695,16 @@ service cloud.firestore {
       try {
         const blob = await renderBadgedImageBlob(m, 'all');
         if (!blob) return;
-        // A unique suffix per download — without it, re-downloading the same model (a repeat
-        // visit, or two different share links with the same model) collides with a
-        // same-named file already in Downloads, and Chrome interrupts with its own
-        // "Download file again?" confirmation prompt that we can't suppress otherwise.
-        const filename = `${m.modelCode || 'model'}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}.jpg`;
+        // A unique, readable suffix per download (date + time down to the millisecond) —
+        // without it, re-downloading the same model (a repeat visit, or two different share
+        // links with the same model) collides with a same-named file already in Downloads,
+        // and Chrome interrupts with its own "Download file again?" confirmation prompt that
+        // we can't suppress otherwise. Milliseconds (not just seconds) keep a fast bulk
+        // download of several photos in a row from colliding with each other too.
+        const _now = new Date();
+        const _pad = (n, len) => String(n).padStart(len || 2, '0');
+        const _stamp = `${_now.getFullYear()}${_pad(_now.getMonth() + 1)}${_pad(_now.getDate())}_${_pad(_now.getHours())}${_pad(_now.getMinutes())}${_pad(_now.getSeconds())}${_pad(_now.getMilliseconds(), 3)}`;
+        const filename = `${m.modelCode || 'model'}_${_stamp}.jpg`;
         const savedNatively = await window.saveBlobToDevice(blob, filename, true);
         if (!savedNatively) {
           const url = URL.createObjectURL(blob);
