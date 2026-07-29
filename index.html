@@ -5114,7 +5114,7 @@ service cloud.firestore {
               if (priceInfo.hasDiscount) {
                 const origText = fmt(priceInfo.orig);
                 const discText = fmt(priceInfo.final);
-                const pctText  = `-${priceInfo.pct}%`;
+                const pctText  = `${priceInfo.pct}%`;
                 ctx.fillStyle = "rgba(255,255,255,0.5)";
                 ctx.font = `${origFs}px system-ui`;
                 const origLine = `${origText}  ${model.ageGroup || ""}`;
@@ -5216,7 +5216,7 @@ service cloud.firestore {
         col++;
         if (col >= cols) { col = 0; row++; }
       }
-      const pdfName = `${folderName}.pdf`;
+      const pdfName = buildDownloadFilename(folderName, 'pdf');
       const pdfSavedNatively = await window.saveBlobToDevice(doc.output('blob'), pdfName, false);
       if (!pdfSavedNatively) doc.save(pdfName);
       showToast("PDF downloaded ✓", "success");
@@ -5235,7 +5235,7 @@ service cloud.firestore {
   <image href="${dataUrl}" x="0" y="0" width="1080" height="1080"/>
 </svg>`;
         const blob = new Blob([svg], { type: "image/svg+xml" });
-        const svgName = `${model.modelCode || "model"}.svg`;
+        const svgName = buildDownloadFilename(model.modelCode || "model", "svg");
         const svgSavedNatively = await window.saveBlobToDevice(blob, svgName, true);
         if (!svgSavedNatively) {
           const a = document.createElement("a");
@@ -5287,11 +5287,12 @@ service cloud.firestore {
           slide.addText(`${fmt(pptxPrice.orig)}  •  ${model.ageGroup || ""}`, { x:0.3, y:7.35, w:12.7, h:0.4, fontSize:13, align:"center", color:"777777" });
         }
       }
+      const pptxName = buildDownloadFilename(folderName, 'pptx');
       if (window.AndroidDownloader) {
         const pptxBlob = await pptx.write("blob");
-        await window.saveBlobToDevice(pptxBlob, `${folderName}.pptx`, false);
+        await window.saveBlobToDevice(pptxBlob, pptxName, false);
       } else {
-        await pptx.writeFile({ fileName: `${folderName}.pptx` });
+        await pptx.writeFile({ fileName: pptxName });
       }
       showToast("Downloaded PowerPoint ✓", "success");
     }
@@ -5974,7 +5975,7 @@ service cloud.firestore {
       const isAdminViewing = window._currentUserRole === "admin";
       const isSoldOut = !!m.soldOut;
       const discountBadgeHTML = showDiscount
-        ? `<div class="discount-badge">-${discountPct}%</div>`
+        ? `<div class="discount-badge">${discountPct}%</div>`
         : (m.excludeFromDiscount && isAdminViewing
             ? `<div class="discount-badge" style="background:rgba(107,114,128,0.85);box-shadow:none;font-size:0.6rem;padding:2px 6px;" title="Excluded from discount">🚫 Excluded</div>`
             : '');
@@ -6532,7 +6533,7 @@ service cloud.firestore {
         allLabel.textContent = allSelected ? t.deselectAllLabel : t.selectAllLabel;
       }
       const dlLabel = document.getElementById('psv-download-selected-label');
-      if (dlLabel) dlLabel.textContent = t.downloadSelectedLabel;
+      if (dlLabel) dlLabel.textContent = n > 0 ? `${t.downloadSelectedLabel} (${n})` : t.downloadSelectedLabel;
       // A second, more discoverable "Download" entry point next to the Select/Cancel toggle
       // at the top — appears as soon as anything is picked, since the per-photo Download
       // button under each card was removed (this + the floating bottom bar are now the only
@@ -6540,7 +6541,13 @@ service cloud.firestore {
       const topDlBtn = document.getElementById('psv-download-all-btn');
       const topDlLabel = document.getElementById('psv-download-all-label');
       if (topDlBtn) topDlBtn.classList.toggle('hidden', n < 1);
-      if (topDlLabel) topDlLabel.textContent = t.downloadSelectedLabel;
+      if (topDlLabel) topDlLabel.textContent = n > 0 ? `${t.downloadSelectedLabel} (${n})` : t.downloadSelectedLabel;
+      // The Select/Cancel toggle itself also shows the running count once selecting starts —
+      // e.g. "Cancel (9)" — so it's visible without having to look at the bottom bar.
+      const modeLabel = document.getElementById('psv-select-mode-label');
+      if (modeLabel && window._psvSelectMode) {
+        modeLabel.textContent = n > 0 ? `${t.cancelSelectLabel} (${n})` : t.cancelSelectLabel;
+      }
     }
 
     // Re-renders the whole grid on every selection change rather than patching individual
@@ -6676,7 +6683,7 @@ service cloud.firestore {
         priceEl.innerHTML = priceInfo.hasDiscount
           ? `<span style="color:#9ca3af;font-size:0.8rem;text-decoration:line-through;">${fmt(priceInfo.orig)}</span>
              <span style="color:#dc2626;font-size:1.1rem;font-weight:900;">${fmt(priceInfo.final)}</span>
-             <span style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:999px;">-${priceInfo.pct}%</span>`
+             <span style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:999px;">${priceInfo.pct}%</span>`
           : `<span style="color:#1a1a2e;font-size:1.1rem;font-weight:900;">${fmt(priceInfo.orig)}</span>`;
       }
       const dlLabel = document.getElementById('psv-modal-download-label');
@@ -6695,16 +6702,7 @@ service cloud.firestore {
       try {
         const blob = await renderBadgedImageBlob(m, 'all');
         if (!blob) return;
-        // A unique, readable suffix per download (date + time down to the millisecond) —
-        // without it, re-downloading the same model (a repeat visit, or two different share
-        // links with the same model) collides with a same-named file already in Downloads,
-        // and Chrome interrupts with its own "Download file again?" confirmation prompt that
-        // we can't suppress otherwise. Milliseconds (not just seconds) keep a fast bulk
-        // download of several photos in a row from colliding with each other too.
-        const _now = new Date();
-        const _pad = (n, len) => String(n).padStart(len || 2, '0');
-        const _stamp = `${_now.getFullYear()}${_pad(_now.getMonth() + 1)}${_pad(_now.getDate())}_${_pad(_now.getHours())}${_pad(_now.getMinutes())}${_pad(_now.getSeconds())}${_pad(_now.getMilliseconds(), 3)}`;
-        const filename = `${m.modelCode || 'model'}_${_stamp}.jpg`;
+        const filename = buildDownloadFilename(m.modelCode || 'model', 'jpg');
         const savedNatively = await window.saveBlobToDevice(blob, filename, true);
         if (!savedNatively) {
           const url = URL.createObjectURL(blob);
@@ -7555,6 +7553,16 @@ service cloud.firestore {
     };
 
     // ── Round rect helper ──
+    // Shared by every download path (single quick-download, folder ZIP/Gallery/PDF/SVG/PPTX
+    // export, and the public share view) — appends a date+time-to-the-millisecond suffix so a
+    // repeat download never collides with a same-named file already sitting in Downloads, which
+    // is what triggers the browser's own "Download file again?" confirmation prompt.
+    function buildDownloadFilename(prefix, ext) {
+      const now = new Date();
+      const pad = (n, len) => String(n).padStart(len || 2, '0');
+      const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${pad(now.getMilliseconds(), 3)}`;
+      return `${prefix}_${stamp}.${ext}`;
+    }
     function roundRect(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2,Math.max(0,r));ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 
     // ── Download ──
@@ -7653,7 +7661,7 @@ service cloud.firestore {
                 const priceInfo=getDiscountedPrice(m);
                 if(priceInfo.hasDiscount){
                   ctx.font=`800 ${dfs}px Arial`;
-                  const dlabel=`-${priceInfo.pct}%`;
+                  const dlabel=`${priceInfo.pct}%`;
                   const dw2=Math.min(ctx.measureText(dlabel).width+pad*1.3, w*0.35);
                   ctx.fillStyle="#ef4444"; roundRect(ctx,pad,pad,dw2,dh,br_disc); ctx.fill();
                   ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle";
@@ -7722,7 +7730,7 @@ service cloud.firestore {
       }
       const zipBlob=await zip.generateAsync({type:"blob"});
       const ml={"all":"all-info","clean":"clean","code":"with-code","manual":"manual"}[mode]||mode;
-      const zipName=`sonbola-${ml}-${models.length}models.zip`;
+      const zipName=buildDownloadFilename(`sonbola-${ml}-${models.length}models`, 'zip');
       // Android app: hand the ZIP to the native bridge (WebView drops blob-anchor downloads).
       const zipSavedNatively = await window.saveBlobToDevice(zipBlob, zipName, false);
       if (!zipSavedNatively) {
@@ -7945,7 +7953,7 @@ service cloud.firestore {
 
           // Save image — Android app bridge first (saves straight into the phone's
           // Pictures/Gallery), then File System Access API, then anchor-click fallback.
-          const filename = `${_seq}_${m.modelCode||'model'}.${outExt}`;
+          const filename = buildDownloadFilename(`${_seq}_${m.modelCode||'model'}`, outExt);
           const savedNatively = await window.saveBlobToDevice(blob, filename, true);
           if (savedNatively) {
             // done — saved by the Android app
