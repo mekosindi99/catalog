@@ -2530,35 +2530,16 @@ service cloud.firestore {
               class="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
           </div>
           <div class="col-span-2">
-            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="ageGroup">Age Group *</label>
-            <div id="age-tags-wrap" class="flex flex-wrap gap-2 mb-2 min-h-[0px]"></div>
-            <div class="flex items-center gap-1.5">
-              <input id="age-from-num" type="number" min="1" max="99" placeholder="2"
-                class="w-14 h-10 px-2 text-center rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition"
-                onkeydown="if(event.key==='Enter'){event.preventDefault();addAgeTag()}" />
-              <select id="age-from-unit"
-                class="h-10 px-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition cursor-pointer">
-                <option value="m">m</option>
-                <option value="y" selected>y</option>
-              </select>
-              <span class="text-gray-400 font-bold text-base">_</span>
-              <input id="age-to-num" type="number" min="1" max="99" placeholder="3"
-                class="w-14 h-10 px-2 text-center rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition"
-                onkeydown="if(event.key==='Enter'){event.preventDefault();addAgeTag()}" />
-              <select id="age-to-unit"
-                class="h-10 px-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition cursor-pointer">
-                <option value="m">m</option>
-                <option value="y" selected>y</option>
-              </select>
-              <button type="button" onclick="addAgeTag()"
-                class="w-10 h-10 rounded-xl bg-[#e85d3a] text-white flex items-center justify-center hover:bg-[#c44828] transition shrink-0 shadow-sm">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-                </svg>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-bold text-gray-600" data-i18n="ageGroup">Age Group *</label>
+              <button type="button" onclick="window.addAgeRangeRow()"
+                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#e85d3a]/10 text-[#e85d3a] text-xs font-bold hover:bg-[#e85d3a]/20 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                <span data-i18n="addRange">Add range</span>
               </button>
             </div>
+            <div id="age-ranges-wrap" class="space-y-1.5"></div>
             <input id="f-age" type="hidden" />
-            <p class="text-[11px] text-gray-400 mt-1.5">Example: <span class="font-bold text-gray-500">2y _ 3y</span> or <span class="font-bold text-gray-500">6m _ 12m</span> — Press + to add range</p>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="price">Price *</label>
@@ -3592,6 +3573,9 @@ service cloud.firestore {
         modelCode: 'كود الموديل *',
         serialNumber: 'الرقم التسلسلي *',
         ageGroup: 'الفئة العمرية *',
+        addRange: 'أضف فترة',
+        ageFrom: 'من',
+        ageTo: 'إلى',
         price: 'السعر *',
         type: 'النوع',
         season: 'الموسم',
@@ -3723,6 +3707,9 @@ service cloud.firestore {
         modelCode: 'کۆدی مۆدێل *',
         serialNumber: 'ژمارەی زنجیرەیی *',
         ageGroup: 'گروپی تەمەن *',
+        addRange: 'ماوە زیاد بکە',
+        ageFrom: 'لە',
+        ageTo: 'بۆ',
         price: 'نرخ *',
         type: 'جۆر',
         season: 'وەرز',
@@ -3854,6 +3841,9 @@ service cloud.firestore {
         modelCode: 'Model Code *',
         serialNumber: 'Serial Number *',
         ageGroup: 'Age Group *',
+        addRange: 'Add range',
+        ageFrom: 'from',
+        ageTo: 'to',
         price: 'Price *',
         type: 'Type',
         season: 'Season',
@@ -4035,7 +4025,10 @@ service cloud.firestore {
       ? 'https://catalog.sonbola.shop/'
       : window.location.href.split('?')[0];
     let selectedIds    = new Set();
-    let ageTags        = [];
+    // Each row is one age range, editable in place — matches sonbola.shop's own inventory
+    // form (multiple persistent "from - to" rows with an Add/Remove range button per row)
+    // instead of the old "type a range, press +, it becomes a static chip" flow.
+    let ageRangeRows   = [{ fromNum: '', fromUnit: 'y', toNum: '', toUnit: 'y' }];
     let isSaving       = false;
 
     // Folder state
@@ -6921,39 +6914,74 @@ service cloud.firestore {
     };
     window.closeLoginModal = function() { hideLoginModal(); };
 
-    // ── Age tags ──
-    window.addAgeTag = function() {
-      const fn = document.getElementById("age-from-num").value.trim();
-      const fu = document.getElementById("age-from-unit").value;
-      const tn = document.getElementById("age-to-num").value.trim();
-      const tu = document.getElementById("age-to-unit").value;
-      if (!fn || !tn) { showToast("Enter full numbers", "error"); return; }
-      const tag = `${fn}${fu}_${tn}${tu}`;
-      if (!ageTags.includes(tag)) { ageTags.push(tag); renderAgeTags(); }
-      document.getElementById("age-from-num").value = '';
-      document.getElementById("age-to-num").value   = '';
-    };
-    window.removeAgeTag = function(tag) {
-      ageTags = ageTags.filter(t => t !== tag);
-      renderAgeTags();
-    };
-    function renderAgeTags() {
-      const wrap = document.getElementById("age-tags-wrap");
-      if (!wrap) return;
-      wrap.innerHTML = ageTags.map(t => `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#e85d3a]/10 text-[#e85d3a] text-xs font-bold rounded-lg">
-          ${formatAgeTag(t)}
-          <button type="button" class="remove-age-tag ml-1 text-[#e85d3a]/60 hover:text-red-500" data-age-tag="${t.replace(/"/g, '&quot;')}">×</button>
-        </span>`).join('');
-      // Add event listeners for remove age tag buttons
-      document.querySelectorAll('.remove-age-tag[data-age-tag]').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const ageTag = this.getAttribute('data-age-tag');
-          if (ageTag) window.removeAgeTag(ageTag);
-        });
-      });
-      document.getElementById("f-age").value = ageTags.join(',');
+    // ── Age ranges (sonbola.shop-style: persistent editable rows, not chips) ──
+    function parseAgeTagParts(tag) {
+      const m = (tag || '').trim().match(/^(\d+)([my])_(\d+)([my])$/i);
+      if (!m) return null;
+      return { fromNum: m[1], fromUnit: m[2].toLowerCase(), toNum: m[3], toUnit: m[4].toLowerCase() };
     }
+    function ageRangeRowsFromString(str) {
+      const rows = (str || '').split(',').map(parseAgeTagParts).filter(Boolean);
+      return rows.length ? rows : [{ fromNum: '', fromUnit: 'y', toNum: '', toUnit: 'y' }];
+    }
+    // Reads every row's current input values back into ageRangeRows and rebuilds the hidden
+    // #f-age field — runs on every keystroke/select change, so there's no separate "commit"
+    // step; a row is a live, always-saved value the moment both numbers are filled in.
+    window.syncAgeRanges = function() {
+      const wrap = document.getElementById("age-ranges-wrap");
+      if (!wrap) return;
+      const rowEls = Array.from(wrap.querySelectorAll(".age-range-row"));
+      ageRangeRows = rowEls.map(r => ({
+        fromNum: r.querySelector(".age-from-num").value.trim(),
+        fromUnit: r.querySelector(".age-from-unit").value,
+        toNum: r.querySelector(".age-to-num").value.trim(),
+        toUnit: r.querySelector(".age-to-unit").value,
+      }));
+      const tags = ageRangeRows.filter(r => r.fromNum && r.toNum).map(r => `${r.fromNum}${r.fromUnit}_${r.toNum}${r.toUnit}`);
+      document.getElementById("f-age").value = tags.join(',');
+    };
+    function renderAgeRangeRows() {
+      const wrap = document.getElementById("age-ranges-wrap");
+      if (!wrap) return;
+      const fromLabel = window.t ? window.t('ageFrom') : 'from';
+      const toLabel = window.t ? window.t('ageTo') : 'to';
+      wrap.innerHTML = ageRangeRows.map((row, i) => `
+        <div class="flex items-center gap-1.5 age-range-row">
+          <input type="number" min="0" max="99" placeholder="${escapeHtml(fromLabel)}" value="${escapeHtml(row.fromNum || '')}"
+            oninput="window.syncAgeRanges()"
+            class="age-from-num w-16 h-10 px-2 text-center rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
+          <select onchange="window.syncAgeRanges()"
+            class="age-from-unit h-10 px-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition cursor-pointer">
+            <option value="y" ${row.fromUnit !== 'm' ? 'selected' : ''}>y</option>
+            <option value="m" ${row.fromUnit === 'm' ? 'selected' : ''}>m</option>
+          </select>
+          <span class="text-gray-400 font-bold text-base">—</span>
+          <input type="number" min="0" max="99" placeholder="${escapeHtml(toLabel)}" value="${escapeHtml(row.toNum || '')}"
+            oninput="window.syncAgeRanges()"
+            class="age-to-num w-16 h-10 px-2 text-center rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
+          <select onchange="window.syncAgeRanges()"
+            class="age-to-unit h-10 px-2 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition cursor-pointer">
+            <option value="y" ${row.toUnit !== 'm' ? 'selected' : ''}>y</option>
+            <option value="m" ${row.toUnit === 'm' ? 'selected' : ''}>m</option>
+          </select>
+          ${ageRangeRows.length > 1 ? `<button type="button" onclick="window.removeAgeRangeRow(${i})"
+            class="w-9 h-9 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg>
+          </button>` : ''}
+        </div>`).join('');
+      window.syncAgeRanges();
+    }
+    window.addAgeRangeRow = function() {
+      window.syncAgeRanges();
+      ageRangeRows.push({ fromNum: '', fromUnit: 'y', toNum: '', toUnit: 'y' });
+      renderAgeRangeRows();
+    };
+    window.removeAgeRangeRow = function(i) {
+      window.syncAgeRanges();
+      if (ageRangeRows.length <= 1) return;
+      ageRangeRows.splice(i, 1);
+      renderAgeRangeRows();
+    };
 
     // ── Color helpers ──
     function getColor(name) {
@@ -7073,8 +7101,8 @@ service cloud.firestore {
       if (folderInput) folderInput.value = model.folderId || currentFolderId || "";
       document.getElementById("f-code").value   = model.modelCode || '';
       document.getElementById("f-serial").value = model.serial    || '';
-      ageTags = (model.ageGroup||'').split(',').map(a=>a.replace(/year\s*/g,'').replace(/\s*year/g,'').replace(/years?\s*/gi,'').replace(/\s*years?/gi,'').trim()).filter(Boolean);
-      renderAgeTags();
+      ageRangeRows = ageRangeRowsFromString(cleanAgeStr(model.ageGroup || ''));
+      renderAgeRangeRows();
       document.getElementById("f-price").value = model.price || '';
       document.getElementById("f-category").value = model.category || '';
       document.getElementById("f-season").value = model.season || '';
@@ -7107,8 +7135,8 @@ service cloud.firestore {
 
     function resetForm() {
       selectedFile = null; uploadedImageUrl = null;
-      ageTags = []; renderAgeTags();
-      ["age-from-num","age-to-num"].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+      ageRangeRows = [{ fromNum: '', fromUnit: 'y', toNum: '', toUnit: 'y' }];
+      renderAgeRangeRows();
       ["f-code","f-serial","f-age","f-price","f-category","f-season","f-gender"].forEach(id => { document.getElementById(id).value=''; });
       document.getElementById("f-img-size").value = "original";
       document.getElementById("img-preview-container").classList.add("hidden");
@@ -7132,9 +7160,7 @@ service cloud.firestore {
       isSaving = true;
       const code   = document.getElementById("f-code").value.trim().replace(/^./,c=>c.toUpperCase());
       const serial = parseInt(document.getElementById("f-serial").value) || 0;
-      const fn = document.getElementById("age-from-num"); const tn = document.getElementById("age-to-num");
-      const fu = document.getElementById("age-from-unit"); const tu = document.getElementById("age-to-unit");
-      if (fn && tn && fn.value.trim() && tn.value.trim()) window.addAgeTag();
+      window.syncAgeRanges();
       const age   = document.getElementById("f-age").value.trim();
       const price = parseFloat(document.getElementById("f-price").value) || 0;
       const imageSize = document.getElementById("f-img-size").value;
