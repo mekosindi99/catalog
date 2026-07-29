@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>Catalog</title>
+  <!-- Static preview card for chat-app link unfurling (WhatsApp/Viber/Facebook/Messenger read only
+       these tags, not JS), so a shared "?s=..." link shows a clean branded card instead of the
+       raw URL/domain — same card for every link, since crawlers can't run per-link JS anyway. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Sonbola Kids Catalog" />
+  <meta property="og:description" content="Product photos shared from Sonbola Kids" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Sonbola Kids Catalog" />
+  <meta name="twitter:description" content="Product photos shared from Sonbola Kids" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -3400,7 +3409,7 @@ service cloud.firestore {
     let currentSort    = 'serial'; // serial | code-asc | code-desc | date-new | date-old | price-high | price-low
     // true when opened via a view-only share link (?folder=X without &signin=1)
     const _urlParams   = new URLSearchParams(window.location.search);
-    const viewOnlyMode = (!!_urlParams.get('folder') && _urlParams.get('signin') !== '1') || (_urlParams.get('share') || '').length > 0;
+    const viewOnlyMode = (!!_urlParams.get('folder') && _urlParams.get('signin') !== '1') || (_urlParams.get('share') || '').length > 0 || (_urlParams.get('s') || '').length > 0;
     window._viewOnlyMode = viewOnlyMode; // expose for module-scoped scripts (which don't share this classic script's lexical scope)
     // ?share=<id>,<id>,... — a curated multi-model link, possibly spanning several folders.
     // Sanitized to Firestore's own doc-id charset (letters/digits/_/-, max 1500 bytes) before
@@ -3408,7 +3417,12 @@ service cloud.firestore {
     const _shareModelIds = (_urlParams.get('share') || '')
       .split(',').map(s => s.trim()).filter(id => /^[A-Za-z0-9_-]{1,64}$/.test(id)).slice(0, 60);
     window._shareModelIds = _shareModelIds;
-    const isPublicShareView = _shareModelIds.length > 0;
+    // ?s=<code> — a short link pointing at a "shared_links" Firestore doc holding the real model
+    // id list, so the URL a customer sees stays short instead of a long comma-separated list
+    // (long ?share= links were being mistaken for phishing links). Resolved by the module script.
+    const _shareLinkCode = (_urlParams.get('s') || '').trim();
+    window._shareLinkCode = /^[A-Za-z0-9_-]{1,64}$/.test(_shareLinkCode) ? _shareLinkCode : '';
+    const isPublicShareView = _shareModelIds.length > 0 || !!window._shareLinkCode;
     window._isPublicShareView = isPublicShareView;
     let selectedIds    = new Set();
     let ageTags        = [];
@@ -6644,7 +6658,19 @@ service cloud.firestore {
         if (el) el.textContent = msg;
       };
       const ids = Array.from(selectedIds);
-      const url = `${window.location.origin}${window.location.pathname}?share=${ids.map(encodeURIComponent).join(',')}`;
+      setStatus('Creating link...');
+      // Prefer a short ?s=<code> link (code points at a "shared_links" Firestore doc holding
+      // the real id list) so the link customers see is short and doesn't look like phishing.
+      // Falls back to the long ?share=id,id,... form if the short-link write fails for any reason.
+      let url = `${window.location.origin}${window.location.pathname}?share=${ids.map(encodeURIComponent).join(',')}`;
+      try {
+        if (window._fbCreateShareLink) {
+          const code = await window._fbCreateShareLink(ids);
+          url = `${window.location.origin}${window.location.pathname}?s=${code}`;
+        }
+      } catch (e) {
+        console.error('short link creation failed, falling back to long link:', e);
+      }
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(url);
@@ -8887,6 +8913,17 @@ service cloud.firestore {
       return ref;
     };
 
+    // ── Create a short public share link: writes the model id list to "shared_links" and
+    // returns the new doc's id, which becomes the whole "?s=" query value (short, opaque,
+    // doesn't look like a phishing link the way a long comma-separated id list did).
+    window._fbCreateShareLink = async function(modelIds) {
+      const ref = await addDoc(collection(db, "shared_links"), {
+        modelIds,
+        createdAt: serverTimestamp(),
+      });
+      return ref.id;
+    };
+
     // ── Duplicate models into a new folder ──
     window._fbDuplicateModels = async function(models, newFolderId) {
       for (const m of models) {
@@ -9939,7 +9976,18 @@ service cloud.firestore {
 
       (async () => {
         try {
-          const ids = window._shareModelIds || [];
+          let ids = window._shareModelIds || [];
+          // A short "?s=<code>" link — resolve it to the real model id list via the
+          // "shared_links" doc it points at (one extra "get", still id-scoped/public per rules).
+          if (window._shareLinkCode) {
+            const linkDoc = await getDoc(doc(db, 'shared_links', window._shareLinkCode)).catch(() => null);
+            if (linkDoc && linkDoc.exists()) {
+              const data = linkDoc.data();
+              ids = Array.isArray(data.modelIds)
+                ? data.modelIds.filter(id => /^[A-Za-z0-9_-]{1,64}$/.test(id)).slice(0, 60)
+                : [];
+            }
+          }
           const modelDocs = await Promise.all(ids.map(id => getDoc(doc(db, 'models', id)).catch(() => null)));
           const models = modelDocs
             .filter(d => d && d.exists())
