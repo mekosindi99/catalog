@@ -3986,6 +3986,15 @@ service cloud.firestore {
       // switch mid-session refreshes those too instead of only new screens.
       if (typeof applyFilters === 'function') applyFilters();
       if (typeof updateSelectAllBtn === 'function') updateSelectAllBtn();
+      // These all bake translated text (badges' age/gender/season, dropdown option labels)
+      // into innerHTML at render time, not via data-i18n — so a language switch needs to force
+      // them to re-render, or already-drawn cards/dropdowns are stuck in whatever language was
+      // active when they were first built. Covers: home folder grid, Type/Season/Gender
+      // filter+form dropdowns, and the Age bracket dropdown (whose own labels are translated
+      // too, via buildAgeBrackets → ageUnitWord).
+      if (typeof renderFolders === 'function') renderFolders();
+      if (typeof populateCatalogOptionSelects === 'function') populateCatalogOptionSelects();
+      if (typeof populateAdvSearchOptions === 'function') populateAdvSearchOptions();
     }
     document.addEventListener('click', (e) => {
       const wrap = document.getElementById('app-lang-switch');
@@ -6157,11 +6166,12 @@ service cloud.firestore {
     function buildAgeBrackets(maxMonths) {
       const brackets = [];
       if (maxMonths <= 0) return brackets;
-      brackets.push({ from: 0, to: 6, value: '0_6m', label: '0m - 6m' });
-      if (maxMonths > 6) brackets.push({ from: 6, to: 12, value: '6m_1y', label: '6m - 1y' });
+      const yr = ageUnitWord('y'), mo = ageUnitWord('m');
+      brackets.push({ from: 0, to: 6, value: '0_6m', label: `0 ${mo} - 6 ${mo}` });
+      if (maxMonths > 6) brackets.push({ from: 6, to: 12, value: '6m_1y', label: `6 ${mo} - 1 ${yr}` });
       let y = 1;
       while (y * 12 < maxMonths) {
-        brackets.push({ from: y * 12, to: (y + 1) * 12, value: `${y}_${y + 1}y`, label: `${y}y - ${y + 1}y` });
+        brackets.push({ from: y * 12, to: (y + 1) * 12, value: `${y}_${y + 1}y`, label: `${y} ${yr} - ${y + 1} ${yr}` });
         y++;
       }
       return brackets;
