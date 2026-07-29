@@ -5709,7 +5709,13 @@ service cloud.firestore {
           const b = window._ageBracketsMap[sf.age];
           if (b) list = list.filter(m => (m.ageGroup || '').split(',').map(a => a.trim()).filter(Boolean).some(tag => {
             const r = parseAgeTagMonths(tag);
-            return r && r.from <= b.to && r.to >= b.from;
+            if (!r) return false;
+            // A model tagged as a single point (e.g. "1y") only overlaps a bracket it actually
+            // falls inside; a real range must share more than just a touching boundary point
+            // with the bracket (e.g. "1y-6y" ending exactly where "6m-1y" begins, at 12 months,
+            // shares no real span of time with it and shouldn't match).
+            if (r.from === r.to) return r.from >= b.from && r.from <= b.to;
+            return r.from < b.to && r.to > b.from;
           }));
         }
         list = sortModels(list);
