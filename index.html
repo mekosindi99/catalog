@@ -3562,9 +3562,24 @@ service cloud.firestore {
       if (!APP_I18N[lang]) return;
       window._appLang = lang;
       localStorage.setItem('appLang', lang);
+      // Marks this as a deliberate choice, so the role-based default (English for the super
+      // admin, Arabic for everyone else — including anonymous share-link visitors) applied on
+      // every login never overrides a language someone picked for themselves.
+      localStorage.setItem('appLangManual', '1');
       applyAppLanguage();
       const menu = document.getElementById('app-lang-menu');
       if (menu) menu.classList.add('hidden');
+    };
+
+    // Applies the role-based default language (English for the super admin, Arabic for
+    // co_admin/regular users) unless the person already picked a language themselves via the
+    // switcher. Called once per login, after the role is resolved.
+    window._applyRoleLanguageDefault = function(role) {
+      if (localStorage.getItem('appLangManual') === '1') return;
+      const roleDefault = role === 'admin' ? 'en' : 'ar';
+      window._appLang = roleDefault;
+      localStorage.setItem('appLang', roleDefault);
+      applyAppLanguage();
     };
 
     window.toggleAppLangMenu = function() {
@@ -6002,6 +6017,7 @@ service cloud.firestore {
       if (!PSV_I18N[lang]) return;
       window._psvLang = lang;
       localStorage.setItem('appLang', lang);
+      localStorage.setItem('appLangManual', '1');
       applyPsvLanguage();
       const menu = document.getElementById('psv-lang-menu');
       if (menu) menu.classList.add('hidden');
@@ -9386,6 +9402,7 @@ service cloud.firestore {
         // ✅ All checks passed — now set user, role, and update UI
         window._awaitingUserCheck = false;
         window._currentUserRole = resolvedRole;
+        if (window._applyRoleLanguageDefault) window._applyRoleLanguageDefault(resolvedRole);
         S.currentUser = user;
         const gate = document.getElementById("login-gate");
         if (gate) gate.style.display = "none";
