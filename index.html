@@ -1648,7 +1648,7 @@
 
       <!-- ── Folder actions (shown only in folder view) ── -->
       <div id="sheet-folder-section" class="hidden">
-        <p class="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">Folder Actions</p>
+        <p class="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest" data-i18n="folderActions">Folder Actions</p>
 
         <button id="sheet-toggle-specs" onclick="toggleSpecs();closeSideMenu();"
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
@@ -1658,7 +1658,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
             </svg>
           </span>
-          Show / Hide Details
+          <span data-i18n="toggleDetails">Show / Hide Details</span>
         </button>
 
         <button id="sheet-select-all" onclick="toggleSelectAll();closeSideMenu();"
@@ -1676,7 +1676,7 @@
 
       <!-- ── Admin section ── -->
       <div id="sheet-admin-section" class="hidden">
-        <p class="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">Admin</p>
+        <p class="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest" data-i18n="adminSectionLabel">Admin</p>
 
         <button onclick="closeSideMenu(); setTimeout(openAdminPanel, 300);"
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
@@ -1686,7 +1686,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </span>
-          Admin Panel
+          <span data-i18n="adminPanelLabel">Admin Panel</span>
         </button>
 
         <button id="sheet-add-folder" onclick="openAddFolderModal();closeSideMenu();"
@@ -1696,7 +1696,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
             </svg>
           </span>
-          New Folder
+          <span data-i18n="newFolder">New Folder</span>
         </button>
 
         <button id="sheet-add-model" onclick="openAddModal();closeSideMenu();"
@@ -1706,7 +1706,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
             </svg>
           </span>
-          Add Model
+          <span data-i18n="addModel">Add Model</span>
         </button>
 
         <button id="sheet-trash" onclick="openTrashView();closeSideMenu();"
@@ -1716,7 +1716,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
             </svg>
           </span>
-          Trash
+          <span data-i18n="trash">Trash</span>
           <span id="sheet-trash-badge" class="ml-auto hidden w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center"></span>
         </button>
 
@@ -1725,7 +1725,7 @@
 
       <!-- ── User section (not logged in) ── -->
       <div id="sheet-guest-section">
-        <p class="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">Account</p>
+        <p class="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest" data-i18n="accountLabel">Account</p>
         <button onclick="showLoginModal();closeSideMenu();"
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
           <span class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 shrink-0">
@@ -1733,7 +1733,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
             </svg>
           </span>
-          Sign In
+          <span data-i18n="signIn">Sign In</span>
         </button>
       </div>
 
@@ -1746,7 +1746,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
             </svg>
           </span>
-          Sign Out
+          <span data-i18n="signOut">Sign Out</span>
         </button>
       </div>
 
@@ -3543,6 +3543,12 @@ service cloud.firestore {
         moveToFolderTitle: 'نقل لفولدر',
         noFoldersAvailable: 'ما فيه فولدرات متاحة. أنشئ فولدر أولاً.',
         move: 'نقل',
+        folderActions: 'إجراءات الفولدر',
+        toggleDetails: 'إظهار / إخفاء التفاصيل',
+        adminSectionLabel: 'الأدمن',
+        adminPanelLabel: 'لوحة الأدمن',
+        accountLabel: 'الحساب',
+        signOut: 'تسجيل الخروج',
       },
       ku: {
         dir: 'rtl', flag: '<svg viewBox="0 0 90 60" style="width:18px;height:13px;border-radius:2px;"><rect width="90" height="60" fill="#ED1C24"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#149F4B"/><circle cx="45" cy="30" r="9" fill="#FDBB11"/><circle cx="45" cy="30" r="6.5" fill="#fff"/></svg>', code: 'KU',
@@ -3632,6 +3638,12 @@ service cloud.firestore {
         moveToFolderTitle: 'گواستنەوە بۆ فۆڵدەر',
         noFoldersAvailable: 'هیچ فۆڵدەرێک بەردەست نییە. سەرەتا فۆڵدەرێک دروست بکە.',
         move: 'گواستنەوە',
+        folderActions: 'کردارەکانی فۆڵدەر',
+        toggleDetails: 'پیشاندان / شاردنەوەی وردەکاری',
+        adminSectionLabel: 'ئەدمین',
+        adminPanelLabel: 'پانێڵی ئەدمین',
+        accountLabel: 'هەژمار',
+        signOut: 'چوونەدەرەوە',
       },
       en: {
         dir: 'ltr', flag: '🇺🇸', code: 'EN',
@@ -3721,6 +3733,12 @@ service cloud.firestore {
         moveToFolderTitle: 'Move to Folder',
         noFoldersAvailable: 'No folders available. Create a folder first.',
         move: 'Move',
+        folderActions: 'Folder Actions',
+        toggleDetails: 'Show / Hide Details',
+        adminSectionLabel: 'Admin',
+        adminPanelLabel: 'Admin Panel',
+        accountLabel: 'Account',
+        signOut: 'Sign Out',
       },
     };
     window._appLang = localStorage.getItem('appLang') || 'ar';
