@@ -42,9 +42,12 @@
       position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 150;
       align-items: center; gap: 10px; background: #1a1a2e; color: #fff; padding: 10px 14px;
       border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); max-width: calc(100vw - 24px);
+      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
+    #selection-bar::-webkit-scrollbar { display: none; }
     #selection-bar.hidden { display: none; }
     #selection-bar:not(.hidden) { display: flex; }
+    #selection-bar > * { flex-shrink: 0; }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
