@@ -5998,7 +5998,11 @@ service cloud.firestore {
           </div>
           ${discountBadgeHTML}
           <div class="${overlayClass} absolute inset-0 pointer-events-none">
-            ${m.ageGroup ? `<div class="absolute top-2 right-2 flex flex-col items-end gap-1">${cleanAgeStr(m.ageGroup).split(',').map(a=>a.trim()).filter(Boolean).map(a=>`<span style="background:${ageColor};color:${ageTxt};font-size:${ageFontSizeCss};font-weight:800;padding:var(--badge-pad-v) var(--badge-pad-h);border-radius:var(--badge-radius);border:var(--badge-border-width) solid var(--badge-border-color);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);direction:ltr;">${formatAgeTag(a)}</span>`).join('')}</div>` : ''}
+            ${(m.ageGroup || m.gender || m.season) ? `<div class="absolute top-2 right-2 flex flex-col items-end gap-1">
+              ${m.ageGroup ? cleanAgeStr(m.ageGroup).split(',').map(a=>a.trim()).filter(Boolean).map(a=>`<span style="background:${ageColor};color:${ageTxt};font-size:${ageFontSizeCss};font-weight:800;padding:var(--badge-pad-v) var(--badge-pad-h);border-radius:var(--badge-radius);border:var(--badge-border-width) solid var(--badge-border-color);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);direction:ltr;">${formatAgeTag(a)}</span>`).join('') : ''}
+              ${m.gender ? `<span style="background:#fce7f3;color:#be185d;font-size:${ageFontSizeCss};font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);">${escapeHtml(translateCatalogValue(m.gender))}</span>` : ''}
+              ${m.season ? `<span style="background:#e0f2fe;color:#0369a1;font-size:${ageFontSizeCss};font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);">${escapeHtml(translateCatalogValue(m.season))}</span>` : ''}
+            </div>` : ''}
             <div class="absolute bottom-2 left-2"><span class="font-extrabold drop-shadow" style="color:${codeColor};font-size:${codeFontSizeCss};text-shadow:0 2px 8px rgba(0,0,0,0.7);">${safeModelCode.replace(/^./,c=>c.toUpperCase())}</span></div>
             <div class="absolute bottom-2 right-2 flex items-center gap-1">${isPendingDelete && isAdminViewing ? '' : priceHTML}</div>
           </div>
@@ -6158,10 +6162,12 @@ service cloud.firestore {
     }
 
     // ── Admin-configurable Type/Season/Gender lists (app_settings/catalogOptions) ──
+    // Season/Gender options match sonbola.shop's own inventory form exactly (same spec, same
+    // customer-facing categories) so a model looks the same whether it's browsed there or here.
     window._catalogOptions = {
       categories: ['Dress','Suit','Set','Jacket','Pajama','Other'],
-      seasons: ['Summer','Winter','Spring','Fall','All Seasons'],
-      genders: ['Girls','Boys','Unisex'],
+      seasons: ['صيفي','بهاري','شتوي'],
+      genders: ['بناتي','ولادي','ولادي و بناتي'],
     };
 
     function populateCatalogOptionSelects() {
@@ -6333,24 +6339,33 @@ service cloud.firestore {
     // Catalog Fields, so there's no fixed list to translate properly — this is a best-effort
     // lookup for the common values a shop like this actually uses; anything else (a value the
     // admin invented) is shown exactly as typed, in whatever language it was typed in.
+    // Keyed by the lowercased raw value, covering both the English words older models may
+    // still carry AND the Arabic labels now stored directly (matching sonbola.shop's own
+    // inventory form, which shows Arabic dropdown text natively rather than translating an
+    // English code) — so a badge reads correctly regardless of which language it was saved in.
     const CATALOG_VALUE_I18N = {
-      girls:   { ar: 'بناتي', ku: 'کچان' },
-      girl:    { ar: 'بناتي', ku: 'کچان' },
-      boys:    { ar: 'ولادي', ku: 'کوڕان' },
-      boy:     { ar: 'ولادي', ku: 'کوڕان' },
-      unisex:  { ar: 'الجميع', ku: 'هەردووک' },
-      both:    { ar: 'الجميع', ku: 'هەردووک' },
-      summer:  { ar: 'صيفي', ku: 'هاوین' },
-      winter:  { ar: 'شتوي', ku: 'زستان' },
-      spring:  { ar: 'ربيعي', ku: 'بەھار' },
-      autumn:  { ar: 'خريفي', ku: 'پاییز' },
-      fall:    { ar: 'خريفي', ku: 'پاییز' },
-      all:     { ar: 'الكل', ku: 'هەموو' },
+      girls:  { ar: 'بناتي', ku: 'کچان',        en: 'Girls' },
+      girl:   { ar: 'بناتي', ku: 'کچان',        en: 'Girls' },
+      'بناتي':{ ar: 'بناتي', ku: 'کچان',        en: 'Girls' },
+      boys:   { ar: 'ولادي', ku: 'کوڕان',       en: 'Boys' },
+      boy:    { ar: 'ولادي', ku: 'کوڕان',       en: 'Boys' },
+      'ولادي':{ ar: 'ولادي', ku: 'کوڕان',       en: 'Boys' },
+      both:   { ar: 'ولادي و بناتي', ku: 'کوڕان و کچان', en: 'Both' },
+      unisex: { ar: 'ولادي و بناتي', ku: 'کوڕان و کچان', en: 'Both' },
+      'ولادي و بناتي': { ar: 'ولادي و بناتي', ku: 'کوڕان و کچان', en: 'Both' },
+      summer: { ar: 'صيفي', ku: 'هاوین', en: 'Summer' },
+      'صيفي': { ar: 'صيفي', ku: 'هاوین', en: 'Summer' },
+      winter: { ar: 'شتوي', ku: 'زستان', en: 'Winter' },
+      'شتوي': { ar: 'شتوي', ku: 'زستان', en: 'Winter' },
+      spring: { ar: 'بهاري', ku: 'بەھار', en: 'Spring' },
+      'بهاري':{ ar: 'بهاري', ku: 'بەھار', en: 'Spring' },
+      autumn: { ar: 'خريفي', ku: 'پاییز', en: 'Fall' },
+      fall:   { ar: 'خريفي', ku: 'پاییز', en: 'Fall' },
+      all:    { ar: 'الكل', ku: 'هەموو', en: 'All' },
     };
     function translateCatalogValue(value) {
       if (!value) return value;
       const lang = window._psvLang || window._appLang || 'ar';
-      if (lang === 'en') return value;
       const hit = CATALOG_VALUE_I18N[value.trim().toLowerCase()];
       return (hit && hit[lang]) || value;
     }
