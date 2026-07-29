@@ -3427,6 +3427,13 @@ service cloud.firestore {
     window._shareLinkCode = /^[A-Za-z0-9_-]{1,64}$/.test(_shareLinkCode) ? _shareLinkCode : '';
     const isPublicShareView = _shareModelIds.length > 0 || !!window._shareLinkCode;
     window._isPublicShareView = isPublicShareView;
+    // The Android app loads a locally-bundled copy of this page (file:///android_asset/...),
+    // not the live site, so window.location there is useless for building a link a customer
+    // can actually open. Any code that builds a shareable/copyable link must use this instead
+    // of window.location.origin/href so it always points at the real public site.
+    window._publicBaseUrl = window.AndroidDownloader
+      ? 'https://catalog.sonbola.shop/'
+      : window.location.href.split('?')[0];
     let selectedIds    = new Set();
     let ageTags        = [];
     let isSaving       = false;
@@ -3981,14 +3988,14 @@ service cloud.firestore {
     window.ctxOpenFolder = function() { if(ctxFolder) showFolderView(ctxFolder.id); closeFolderCtxMenu(); };
     window.ctxOpenFolderNewTab = function() {
       if (!ctxFolder) return;
-      const url = window.location.href.split('?')[0] + '?folder=' + ctxFolder.id;
+      const url = window._publicBaseUrl + '?folder=' + ctxFolder.id;
       window.open(url, '_blank');
       closeFolderCtxMenu();
     };
     let _shareRole = 'view';
     function updateSharePreview() {
       if (!ctxFolder) return;
-      const base = window.location.href.split('?')[0];
+      const base = window._publicBaseUrl;
       const url = _shareRole === 'edit'
         ? base + '?folder=' + ctxFolder.id + '&signin=1'
         : base + '?folder=' + ctxFolder.id;
@@ -4012,7 +4019,7 @@ service cloud.firestore {
     window.closeShareModal = function() { hideModal('share-modal'); };
     window.confirmCopyShareLink = function() {
       if (!ctxFolder) return;
-      const base = window.location.href.split('?')[0];
+      const base = window._publicBaseUrl;
       const url = _shareRole === 'edit'
         ? base + '?folder=' + ctxFolder.id + '&signin=1'
         : base + '?folder=' + ctxFolder.id;
@@ -6665,11 +6672,11 @@ service cloud.firestore {
       // Prefer a short ?s=<code> link (code points at a "shared_links" Firestore doc holding
       // the real id list) so the link customers see is short and doesn't look like phishing.
       // Falls back to the long ?share=id,id,... form if the short-link write fails for any reason.
-      let url = `${window.location.origin}${window.location.pathname}?share=${ids.map(encodeURIComponent).join(',')}`;
+      let url = `${window._publicBaseUrl}?share=${ids.map(encodeURIComponent).join(',')}`;
       try {
         if (window._fbCreateShareLink) {
           const code = await window._fbCreateShareLink(ids);
-          url = `${window.location.origin}${window.location.pathname}?s=${code}`;
+          url = `${window._publicBaseUrl}?s=${code}`;
         }
       } catch (e) {
         console.error('short link creation failed, falling back to long link:', e);
