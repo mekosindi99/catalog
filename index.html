@@ -1949,9 +1949,9 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
       <img id="psv-modal-img" src="" alt="" class="w-full aspect-square object-cover">
-      <div class="p-4 space-y-3">
-        <div id="psv-modal-badges" class="flex flex-wrap items-center gap-1.5"></div>
-        <div id="psv-modal-price" class="flex items-center gap-2"></div>
+      <div class="p-4 space-y-3.5 text-center">
+        <div id="psv-modal-badges" class="flex flex-wrap items-center justify-center gap-2"></div>
+        <div id="psv-modal-price" class="flex items-center justify-center gap-2.5"></div>
         <button onclick="window.downloadPublicShareImage(window._psvModalId)"
           class="w-full h-11 rounded-xl bg-[#16a34a] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#15803d] transition-colors shadow-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -6582,11 +6582,11 @@ service cloud.firestore {
         const pills = [];
         if (m.ageGroup) {
           cleanAgeStr(m.ageGroup).split(',').map(a => a.trim()).filter(Boolean).forEach(a => {
-            pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">👤 ${escapeHtml(formatAgeTag(a))}</span>`);
+            pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.76rem;font-weight:700;padding:5px 13px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">👤 ${escapeHtml(formatAgeTag(a))}</span>`);
           });
         }
-        if (m.gender) pills.push(`<span style="background:#fce7f3;color:#be185d;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(translateCatalogValue(m.gender))}</span>`);
-        if (m.season) pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(translateCatalogValue(m.season))}</span>`);
+        if (m.gender) pills.push(`<span style="background:#fce7f3;color:#be185d;font-size:0.76rem;font-weight:700;padding:5px 13px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">${escapeHtml(translateCatalogValue(m.gender))}</span>`);
+        if (m.season) pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.76rem;font-weight:700;padding:5px 13px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">${escapeHtml(translateCatalogValue(m.season))}</span>`);
         badgesEl.innerHTML = pills.join('');
       }
       const priceEl = document.getElementById('psv-modal-price');
