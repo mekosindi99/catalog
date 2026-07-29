@@ -1910,7 +1910,12 @@
       </div>
       <div id="psv-loading" class="text-center text-gray-400 text-sm py-16">Loading...</div>
       <div id="psv-empty" class="hidden text-center text-gray-400 text-sm py-16">This link has no items to show.</div>
-      <div id="psv-select-row" class="hidden mb-3 flex items-center justify-end">
+      <div id="psv-select-row" class="hidden mb-3 flex items-center justify-end gap-2">
+        <button type="button" id="psv-download-all-btn" onclick="window.downloadSelectedPsvImages()"
+          class="hidden h-9 px-4 rounded-xl bg-[#16a34a] text-white text-xs font-bold hover:bg-[#15803d] transition-colors flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span id="psv-download-all-label">Download All</span>
+        </button>
         <button type="button" onclick="window.togglePsvSelectMode()"
           class="h-9 px-4 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -6518,6 +6523,13 @@ service cloud.firestore {
       }
       const dlLabel = document.getElementById('psv-download-selected-label');
       if (dlLabel) dlLabel.textContent = t.downloadSelectedLabel;
+      // A second, more discoverable "Download All" entry point next to the Select/Cancel
+      // toggle at the top — appears once 2+ photos are picked (the floating bar at the bottom
+      // does the same job for 1+, but this one is easy to miss scrolling on a long grid).
+      const topDlBtn = document.getElementById('psv-download-all-btn');
+      const topDlLabel = document.getElementById('psv-download-all-label');
+      if (topDlBtn) topDlBtn.classList.toggle('hidden', n < 2);
+      if (topDlLabel) topDlLabel.textContent = t.downloadSelectedLabel;
       document.querySelectorAll('.psv-card-checkbox-wrap[data-id]').forEach(btn => {
         const selected = window._psvSelectedIds.has(btn.dataset.id);
         btn.classList.toggle('bg-[#16a34a]', selected);
@@ -6703,7 +6715,10 @@ service cloud.firestore {
       const label = document.getElementById('psv-share-btn-label');
       if (navigator.share) {
         try {
-          await navigator.share({ title: document.title, text: t.shareText, url });
+          // Fixed on purpose — same title/caption on every platform (WhatsApp/Viber/Instagram)
+          // regardless of the visitor's own selected language, matching the og:title/description
+          // meta tags used for the link-preview card. Not translated via PSV_I18N/t.shareText.
+          await navigator.share({ title: 'سنبلة للأطفال', text: 'انقر الرابط لرؤية جميع الموديلات المتوفرة', url });
           return;
         } catch (e) { /* user cancelled, or unsupported — fall through to copy */ }
       }
