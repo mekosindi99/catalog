@@ -1902,8 +1902,40 @@
       </div>
       <div id="psv-loading" class="text-center text-gray-400 text-sm py-16">Loading...</div>
       <div id="psv-empty" class="hidden text-center text-gray-400 text-sm py-16">This link has no items to show.</div>
+      <div id="psv-select-row" class="hidden mb-3 flex items-center justify-end">
+        <button type="button" onclick="window.togglePsvSelectMode()"
+          class="h-9 px-4 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span id="psv-select-mode-label">Select</span>
+        </button>
+      </div>
       <div id="psv-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"></div>
     </main>
+  </div>
+
+  <!-- Floating bulk-download bar for the public share view, shown once the visitor selects one
+       or more photos (via psv-select-row's "Select" toggle). Lets them save several images at
+       once to their device instead of tapping Download one photo at a time. -->
+  <div id="psv-selection-bar" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[9998] bg-[#1a1a2e] text-white rounded-2xl shadow-2xl px-4 py-2.5 flex items-center gap-3">
+    <span id="psv-selection-count" class="text-xs font-bold whitespace-nowrap">0 selected</span>
+    <button type="button" onclick="window.togglePsvSelectAll()"
+      class="h-8 px-3 rounded-xl bg-white/10 text-white text-xs font-bold hover:bg-white/20 transition-colors whitespace-nowrap">
+      <span id="psv-select-all-label">Select All</span>
+    </button>
+    <button type="button" onclick="window.downloadSelectedPsvImages()"
+      class="h-8 px-3 rounded-xl bg-[#16a34a] text-white text-xs font-bold hover:bg-[#15803d] transition-colors flex items-center gap-1.5 whitespace-nowrap">
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span id="psv-download-selected-label">Download</span>
+    </button>
+  </div>
+
+  <!-- Center-screen confirmation toast: "Downloaded — check your gallery/Downloads", shown
+       after each save so the visitor knows it worked even though the browser's own file-save
+       dialog (if their browser is set to always ask) makes the moment easy to miss. -->
+  <div id="psv-toast" class="hidden fixed inset-0 z-[10001] items-center justify-center pointer-events-none p-6">
+    <div class="bg-[#1a1a2e]/95 text-white rounded-2xl px-5 py-4 shadow-2xl flex items-center gap-3 max-w-xs text-center">
+      <span id="psv-toast-text" class="text-sm font-semibold"></span>
+    </div>
   </div>
 
   <!-- Quick-view popup shown when the customer taps a photo in the public share view — bigger
@@ -6322,6 +6354,14 @@ service cloud.firestore {
         loadingText: 'جاري التحميل...',
         emptyText: 'لا توجد عناصر لعرضها بهذا الرابط.',
         downloadLabel: 'تحميل',
+        selectLabel: 'تحديد',
+        cancelSelectLabel: 'إلغاء',
+        selectAllLabel: 'تحديد الكل',
+        deselectAllLabel: 'إلغاء التحديد',
+        selectedCount: '{n} محدد',
+        downloadSelectedLabel: 'تحميل',
+        toastDownloadedOne: '✓ تم تحميل الصورة — تحقق من معرض الصور',
+        toastDownloadedMany: '✓ تم تحميل {n} صورة — تحقق من معرض الصور',
       },
       ku: {
         dir: 'rtl', flag: '<svg viewBox="0 0 90 60" style="width:18px;height:13px;border-radius:2px;"><rect width="90" height="60" fill="#ED1C24"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#149F4B"/><circle cx="45" cy="30" r="9" fill="#FDBB11"/><circle cx="45" cy="30" r="6.5" fill="#fff"/></svg>', code: 'KU',
@@ -6332,6 +6372,14 @@ service cloud.firestore {
         loadingText: 'بارکردن...',
         emptyText: 'ئەم بەستەرە هیچ شتێکی تێدا نییە بۆ پیشاندان.',
         downloadLabel: 'داگرتن',
+        selectLabel: 'هەڵبژاردن',
+        cancelSelectLabel: 'پاشگەزبوونەوە',
+        selectAllLabel: 'هەموو هەڵبژێرە',
+        deselectAllLabel: 'لابردنی هەڵبژاردن',
+        selectedCount: '{n} هەڵبژێردراوە',
+        downloadSelectedLabel: 'داگرتن',
+        toastDownloadedOne: '✓ وێنەکە داگیرا — سەیری گەلەری بکە',
+        toastDownloadedMany: '✓ {n} وێنە داگیران — سەیری گەلەری بکە',
       },
       en: {
         dir: 'ltr', flag: '🇺🇸', code: 'EN',
@@ -6342,6 +6390,14 @@ service cloud.firestore {
         loadingText: 'Loading...',
         emptyText: 'This link has no items to show.',
         downloadLabel: 'Download',
+        selectLabel: 'Select',
+        cancelSelectLabel: 'Cancel',
+        selectAllLabel: 'Select All',
+        deselectAllLabel: 'Deselect',
+        selectedCount: '{n} selected',
+        downloadSelectedLabel: 'Download',
+        toastDownloadedOne: '✓ Photo downloaded — check your gallery',
+        toastDownloadedMany: '✓ {n} photos downloaded — check your gallery',
       },
     };
     window._psvLang = localStorage.getItem('appLang') || 'ar';
@@ -6390,7 +6446,83 @@ service cloud.firestore {
         if (check) check.style.visibility = active ? 'visible' : 'hidden';
         btn.style.background = active ? '#f9fafb' : 'transparent';
       });
+      const selectModeLabel = document.getElementById('psv-select-mode-label');
+      if (selectModeLabel) selectModeLabel.textContent = window._psvSelectMode ? t.cancelSelectLabel : t.selectLabel;
+      if (typeof updatePsvSelectionUI === 'function') updatePsvSelectionUI();
     }
+
+    // ── Bulk selection for the public share view: lets a customer pick several photos and
+    // save them all at once instead of tapping Download one at a time. Off by default (the
+    // single-photo Download button under each card still works either way) — the visitor
+    // turns it on via the "Select" toggle above the grid. ──
+    window._psvSelectMode = false;
+    window._psvSelectedIds = new Set();
+
+    function updatePsvSelectionUI() {
+      const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
+      const bar = document.getElementById('psv-selection-bar');
+      const n = window._psvSelectedIds.size;
+      if (bar) bar.classList.toggle('hidden', n === 0);
+      const countEl = document.getElementById('psv-selection-count');
+      if (countEl) countEl.textContent = t.selectedCount.replace('{n}', n);
+      const allLabel = document.getElementById('psv-select-all-label');
+      if (allLabel) {
+        const allSelected = allModels.length > 0 && allModels.every(m => window._psvSelectedIds.has(m.id));
+        allLabel.textContent = allSelected ? t.deselectAllLabel : t.selectAllLabel;
+      }
+      const dlLabel = document.getElementById('psv-download-selected-label');
+      if (dlLabel) dlLabel.textContent = t.downloadSelectedLabel;
+      document.querySelectorAll('.psv-card-checkbox').forEach(cb => {
+        cb.checked = window._psvSelectedIds.has(cb.dataset.id);
+      });
+    }
+
+    window.togglePsvSelectMode = function() {
+      window._psvSelectMode = !window._psvSelectMode;
+      if (!window._psvSelectMode) window._psvSelectedIds.clear();
+      const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
+      const label = document.getElementById('psv-select-mode-label');
+      if (label) label.textContent = window._psvSelectMode ? t.cancelSelectLabel : t.selectLabel;
+      document.querySelectorAll('.psv-card-checkbox-wrap').forEach(w => w.classList.toggle('hidden', !window._psvSelectMode));
+      updatePsvSelectionUI();
+    };
+
+    window.togglePsvCardSelect = function(modelId, checked) {
+      if (checked) window._psvSelectedIds.add(modelId); else window._psvSelectedIds.delete(modelId);
+      updatePsvSelectionUI();
+    };
+
+    window.togglePsvSelectAll = function() {
+      const allSelected = allModels.length > 0 && allModels.every(m => window._psvSelectedIds.has(m.id));
+      if (allSelected) window._psvSelectedIds.clear();
+      else allModels.forEach(m => window._psvSelectedIds.add(m.id));
+      updatePsvSelectionUI();
+    };
+
+    let _psvToastTimer = null;
+    function showPsvToast(msg) {
+      const toast = document.getElementById('psv-toast');
+      const textEl = document.getElementById('psv-toast-text');
+      if (!toast || !textEl) return;
+      textEl.textContent = msg;
+      toast.style.display = 'flex';
+      toast.classList.remove('hidden');
+      clearTimeout(_psvToastTimer);
+      _psvToastTimer = setTimeout(() => { toast.style.display = 'none'; toast.classList.add('hidden'); }, 2400);
+    }
+
+    window.downloadSelectedPsvImages = async function() {
+      const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
+      const ids = Array.from(window._psvSelectedIds);
+      if (!ids.length) return;
+      for (const id of ids) {
+        await window.downloadPublicShareImage(id, /*silent=*/true);
+        // A short gap between saves — back-to-back downloads without it get silently dropped
+        // by some mobile browsers (they treat a burst of triggered downloads as spam).
+        await new Promise(r => setTimeout(r, 400));
+      }
+      showPsvToast(ids.length === 1 ? t.toastDownloadedOne : t.toastDownloadedMany.replace('{n}', ids.length));
+    };
 
     // ── Public share view (?share=id,id,...) — read-only, no login. Reuses cardHTML
     // (already suppresses every edit/checkbox control when viewOnlyMode is true, which the
@@ -6406,6 +6538,7 @@ service cloud.firestore {
       const loading = document.getElementById('psv-loading');
       const empty   = document.getElementById('psv-empty');
       const grid    = document.getElementById('psv-grid');
+      const selectRow = document.getElementById('psv-select-row');
       if (loading) loading.classList.add('hidden');
       if (!models.length) {
         if (empty) empty.classList.remove('hidden');
@@ -6413,11 +6546,17 @@ service cloud.firestore {
       }
       const banner = document.getElementById('psv-share-banner');
       if (banner) banner.classList.remove('hidden');
+      if (selectRow) selectRow.classList.remove('hidden');
       if (grid) {
         grid.classList.remove('hidden');
         grid.innerHTML = models.map(m => `
           <div class="flex flex-col gap-2">
-            <div onclick="window.openPsvImageModal('${escapeHtml(m.id)}')">${cardHTML(m)}</div>
+            <div class="relative" onclick="window.openPsvImageModal('${escapeHtml(m.id)}')">
+              ${cardHTML(m)}
+              <label class="psv-card-checkbox-wrap ${window._psvSelectMode ? '' : 'hidden'} absolute top-2 start-2 z-10 w-6 h-6 rounded-md bg-white/90 shadow flex items-center justify-center" onclick="event.stopPropagation()">
+                <input type="checkbox" class="psv-card-checkbox w-4 h-4 accent-[#16a34a]" data-id="${escapeHtml(m.id)}" ${window._psvSelectedIds.has(m.id) ? 'checked' : ''} onchange="window.togglePsvCardSelect('${escapeHtml(m.id)}', this.checked)">
+              </label>
+            </div>
             <button onclick="window.downloadPublicShareImage('${escapeHtml(m.id)}')"
               class="w-full h-9 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#2d2d4e] transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -6425,6 +6564,7 @@ service cloud.firestore {
             </button>
           </div>`).join('');
       }
+      updatePsvSelectionUI();
     };
 
     // Quick-view popup opened by tapping a photo in the public share view — bigger image plus
@@ -6472,7 +6612,7 @@ service cloud.firestore {
       if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
     };
 
-    window.downloadPublicShareImage = async function(modelId) {
+    window.downloadPublicShareImage = async function(modelId, silent) {
       const m = allModels.find(x => x.id === modelId);
       if (!m) return;
       try {
@@ -6486,6 +6626,12 @@ service cloud.firestore {
           a.href = url; a.download = filename;
           document.body.appendChild(a); a.click(); document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 400);
+        }
+        // Reassures the visitor the save actually happened — easy to miss if their own browser
+        // is set to show its own "choose where to save" dialog on every download.
+        if (!silent) {
+          const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
+          showPsvToast(t.toastDownloadedOne);
         }
       } catch (e) { console.error('public share download failed:', e); }
     };
