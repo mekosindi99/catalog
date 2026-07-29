@@ -3182,7 +3182,7 @@ service cloud.firestore {
 
       <!-- Header -->
       <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
-        <h2 class="text-xl font-extrabold text-gray-900">Download</h2>
+        <h2 class="text-xl font-extrabold text-gray-900" data-i18n="download">Download</h2>
         <button onclick="closeFolderDlModal()"
           class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3196,7 +3196,7 @@ service cloud.firestore {
 
         <!-- File Type -->
         <div>
-          <p class="dl-section-label">File type</p>
+          <p class="dl-section-label" data-i18n="dlFileType">File type</p>
           <div class="dl-type-dropdown" id="dl-type-dropdown">
             <!-- Selected display -->
             <div class="dl-type-selected" onclick="toggleDlTypeList()">
@@ -3312,27 +3312,27 @@ service cloud.firestore {
 
         <!-- Image Style (shown for JPG / PNG / PDF / SVG / PPTX) -->
         <div id="dl-style-section">
-          <p class="dl-section-label">Image style</p>
+          <p class="dl-section-label" data-i18n="dlImageStyle">Image style</p>
           <div class="grid grid-cols-2 gap-2">
             <button id="dl-style-all" onclick="selectDlMode('all',this)"
               class="flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-[#e85d3a] bg-orange-50 text-left transition-all">
               <span class="text-base">🏷️</span>
-              <div><p class="text-xs font-bold text-gray-800">All Info</p><p class="text-[10px] text-gray-400 leading-tight">Code + Price + Age</p></div>
+              <div><p class="text-xs font-bold text-gray-800" data-i18n="dlStyleAllInfo">All Info</p><p class="text-[10px] text-gray-400 leading-tight" data-i18n="dlStyleAllInfoDesc">Code + Price + Age</p></div>
             </button>
             <button id="dl-style-clean" onclick="selectDlMode('clean',this)"
               class="flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-transparent bg-gray-50 text-left transition-all">
               <span class="text-base">🖼️</span>
-              <div><p class="text-xs font-bold text-gray-800">Clean</p><p class="text-[10px] text-gray-400 leading-tight">Clean Image</p></div>
+              <div><p class="text-xs font-bold text-gray-800" data-i18n="dlStyleClean">Clean</p><p class="text-[10px] text-gray-400 leading-tight" data-i18n="dlStyleCleanDesc">Clean Image</p></div>
             </button>
             <button id="dl-style-code" onclick="selectDlMode('code',this)"
               class="flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-transparent bg-gray-50 text-left transition-all">
               <span class="text-base">🔢</span>
-              <div><p class="text-xs font-bold text-gray-800">Code Only</p><p class="text-[10px] text-gray-400 leading-tight">Code Only</p></div>
+              <div><p class="text-xs font-bold text-gray-800" data-i18n="dlStyleCode">Code Only</p><p class="text-[10px] text-gray-400 leading-tight" data-i18n="dlStyleCode">Code Only</p></div>
             </button>
             <button id="dl-style-manual" onclick="selectDlMode('manual',this)"
               class="flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-transparent bg-gray-50 text-left transition-all">
               <span class="text-base">📷</span>
-              <div><p class="text-xs font-bold text-gray-800">Original</p><p class="text-[10px] text-gray-400 leading-tight">Original</p></div>
+              <div><p class="text-xs font-bold text-gray-800" data-i18n="dlStyleOriginal">Original</p><p class="text-[10px] text-gray-400 leading-tight" data-i18n="dlStyleOriginal">Original</p></div>
             </button>
           </div>
         </div>
@@ -3341,17 +3341,17 @@ service cloud.firestore {
         <div>
         <!-- Sort Order -->
         <div>
-          <p class="dl-section-label">Sort order</p>
+          <p class="dl-section-label" data-i18n="dlSortOrder">Sort order</p>
           <div class="relative">
             <select id="dl-sort-select" onchange="setDlSort(this.value)"
               class="w-full h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition appearance-none text-gray-700">
-              <option value="serial">Serial Number</option>
-              <option value="code-asc">Code A → Z</option>
-              <option value="code-desc">Code Z → A</option>
-              <option value="date-new">Newest First</option>
-              <option value="date-old">Oldest First</option>
-              <option value="price-high">Price High → Low</option>
-              <option value="price-low">Price Low → High</option>
+              <option value="serial" data-i18n="dlSortSerial">Serial Number</option>
+              <option value="code-asc" data-i18n="dlSortCodeAsc">Code A → Z</option>
+              <option value="code-desc" data-i18n="dlSortCodeDesc">Code Z → A</option>
+              <option value="date-new" data-i18n="dlSortNewest">Newest First</option>
+              <option value="date-old" data-i18n="dlSortOldest">Oldest First</option>
+              <option value="price-high" data-i18n="dlSortPriceHigh">Price High → Low</option>
+              <option value="price-low" data-i18n="dlSortPriceLow">Price Low → High</option>
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
               <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3361,12 +3361,12 @@ service cloud.firestore {
           </div>
         </div>
 
-          <p class="dl-section-label">Select models <span id="dl-selected-count" class="normal-case font-semibold text-gray-400 text-[11px]"></span></p>
+          <p class="dl-section-label"><span data-i18n="dlSelectModels">Select models</span> <span id="dl-selected-count" class="normal-case font-semibold text-gray-400 text-[11px]"></span></p>
           <div class="border border-gray-100 rounded-xl overflow-hidden">
             <!-- Select All row -->
             <div class="dl-select-all-row" onclick="dlToggleSelectAll()">
               <input type="checkbox" id="dl-check-all-box" class="dl-checkbox" onclick="event.stopPropagation(); dlToggleSelectAll()" />
-              <span class="text-sm font-bold text-gray-700">Select all</span>
+              <span class="text-sm font-bold text-gray-700" data-i18n="selectAll">Select all</span>
             </div>
             <!-- Models list -->
             <div id="dl-models-list" class="max-h-52 overflow-y-auto divide-y divide-gray-50">
@@ -3382,7 +3382,7 @@ service cloud.firestore {
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
           </svg>
-          <span id="dl-confirm-label">Download</span>
+          <span id="dl-confirm-label" data-i18n="download">Download</span>
         </button>
       </div>
     </div>
@@ -3563,6 +3563,24 @@ service cloud.firestore {
         notificationsTitle: '🔔 الإشعارات',
         clearAll: 'مسح الكل',
         noNewNotifications: 'لا توجد إشعارات جديدة',
+        dlFileType: 'نوع الملف',
+        dlImageStyle: 'شكل الصورة',
+        dlStyleAllInfo: 'كل المعلومات',
+        dlStyleAllInfoDesc: 'كود + سعر + عمر',
+        dlStyleClean: 'نظيف',
+        dlStyleCleanDesc: 'صورة نظيفة',
+        dlStyleCode: 'الكود فقط',
+        dlStyleOriginal: 'الأصلي',
+        dlSortOrder: 'ترتيب حسب',
+        dlSortSerial: 'الرقم التسلسلي',
+        dlSortCodeAsc: 'الكود أ ← ي',
+        dlSortCodeDesc: 'الكود ي ← أ',
+        dlSortNewest: 'الأحدث أولاً',
+        dlSortOldest: 'الأقدم أولاً',
+        dlSortPriceHigh: 'السعر من الأعلى للأقل',
+        dlSortPriceLow: 'السعر من الأقل للأعلى',
+        dlSelectModels: 'تحديد الموديلات',
+        preparing: 'جاري التجهيز...',
       },
       ku: {
         dir: 'rtl', flag: '<svg viewBox="0 0 90 60" style="width:18px;height:13px;border-radius:2px;"><rect width="90" height="60" fill="#ED1C24"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#149F4B"/><circle cx="45" cy="30" r="9" fill="#FDBB11"/><circle cx="45" cy="30" r="6.5" fill="#fff"/></svg>', code: 'KU',
@@ -3672,6 +3690,24 @@ service cloud.firestore {
         notificationsTitle: '🔔 ئاگادارییەکان',
         clearAll: 'سڕینەوەی هەموو',
         noNewNotifications: 'هیچ ئاگاداریەکی نوێ نییە',
+        dlFileType: 'جۆری فایل',
+        dlImageStyle: 'شێوازی وێنە',
+        dlStyleAllInfo: 'هەموو زانیارییەکان',
+        dlStyleAllInfoDesc: 'کۆد + نرخ + تەمەن',
+        dlStyleClean: 'پاک',
+        dlStyleCleanDesc: 'وێنەی پاک',
+        dlStyleCode: 'تەنها کۆد',
+        dlStyleOriginal: 'ڕەسەن',
+        dlSortOrder: 'ڕیزکردن بەپێی',
+        dlSortSerial: 'ژمارەی زنجیرەیی',
+        dlSortCodeAsc: 'کۆد ئ ← ی',
+        dlSortCodeDesc: 'کۆد ی ← ئ',
+        dlSortNewest: 'نوێترین یەکەم',
+        dlSortOldest: 'کۆنترین یەکەم',
+        dlSortPriceHigh: 'نرخ لە زۆرەوە بۆ کەم',
+        dlSortPriceLow: 'نرخ لە کەمەوە بۆ زۆر',
+        dlSelectModels: 'هەڵبژاردنی مۆدێلەکان',
+        preparing: 'ئامادەکردن...',
       },
       en: {
         dir: 'ltr', flag: '🇺🇸', code: 'EN',
@@ -3781,6 +3817,24 @@ service cloud.firestore {
         notificationsTitle: '🔔 Notifications',
         clearAll: 'Clear All',
         noNewNotifications: 'No new notifications',
+        dlFileType: 'File type',
+        dlImageStyle: 'Image style',
+        dlStyleAllInfo: 'All Info',
+        dlStyleAllInfoDesc: 'Code + Price + Age',
+        dlStyleClean: 'Clean',
+        dlStyleCleanDesc: 'Clean Image',
+        dlStyleCode: 'Code Only',
+        dlStyleOriginal: 'Original',
+        dlSortOrder: 'Sort order',
+        dlSortSerial: 'Serial Number',
+        dlSortCodeAsc: 'Code A → Z',
+        dlSortCodeDesc: 'Code Z → A',
+        dlSortNewest: 'Newest First',
+        dlSortOldest: 'Oldest First',
+        dlSortPriceHigh: 'Price High → Low',
+        dlSortPriceLow: 'Price Low → High',
+        dlSelectModels: 'Select models',
+        preparing: 'Preparing...',
       },
     };
     window._appLang = localStorage.getItem('appLang') || 'ar';
@@ -4859,7 +4913,7 @@ service cloud.firestore {
       const btn = document.getElementById("dl-confirm-btn");
       const label = document.getElementById("dl-confirm-label");
       btn.disabled = true;
-      label.textContent = "Preparing...";
+      label.textContent = window.t('preparing');
       // ── FIX #3: reload globalFontSizes + allFolders from Firestore before downloading ──
       try { await loadGlobalFontSizes(); } catch(e) {}
       try { await loadGlobalDiscount(); } catch(e) {}
