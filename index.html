@@ -503,6 +503,16 @@
     /* Clear visual feedback when a photo is selected in the public share view's bulk-select
        mode — a colored ring around the whole card, on top of the checkmark button itself. */
     .psv-card-outer.psv-card-selected { outline: 3px solid #16a34a; outline-offset: -3px; border-radius: 1rem; }
+    /* Slight dim on an unselected photo while select mode is on, so the centered (unfilled)
+       checkmark circle is legible against busy photo backgrounds. */
+    .psv-select-dim { background: rgba(0,0,0,0.08); border-radius: 1rem; }
+    /* Blinking glow on the "Download" button once something is selected, so it's impossible to
+       miss even on a long grid the visitor has scrolled past the top of. */
+    @keyframes psvGlowPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.65); }
+      50% { box-shadow: 0 0 0 8px rgba(22,163,74,0); }
+    }
+    .psv-glow-btn { animation: psvGlowPulse 1.6s ease-out infinite; }
 
     /* Mobile-first: icon-only compact square */
     .bc-dl-btn   { width: 32px; height: 32px; padding: 0; font-size: 0; border-radius: 8px; }
@@ -1912,7 +1922,7 @@
       <div id="psv-empty" class="hidden text-center text-gray-400 text-sm py-16">This link has no items to show.</div>
       <div id="psv-select-row" class="hidden mb-3 flex items-center justify-end gap-2">
         <button type="button" id="psv-download-all-btn" onclick="window.downloadSelectedPsvImages()"
-          class="hidden h-9 px-4 rounded-xl bg-[#16a34a] text-white text-xs font-bold hover:bg-[#15803d] transition-colors flex items-center gap-1.5">
+          class="hidden h-9 px-4 rounded-xl bg-[#16a34a] text-white text-xs font-bold hover:bg-[#15803d] transition-colors flex items-center gap-1.5 psv-glow-btn">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           <span id="psv-download-all-label">Download All</span>
         </button>
@@ -6523,45 +6533,40 @@ service cloud.firestore {
       }
       const dlLabel = document.getElementById('psv-download-selected-label');
       if (dlLabel) dlLabel.textContent = t.downloadSelectedLabel;
-      // A second, more discoverable "Download All" entry point next to the Select/Cancel
-      // toggle at the top — appears once 2+ photos are picked (the floating bar at the bottom
-      // does the same job for 1+, but this one is easy to miss scrolling on a long grid).
+      // A second, more discoverable "Download" entry point next to the Select/Cancel toggle
+      // at the top — appears as soon as anything is picked, since the per-photo Download
+      // button under each card was removed (this + the floating bottom bar are now the only
+      // ways to save a photo while in select mode).
       const topDlBtn = document.getElementById('psv-download-all-btn');
       const topDlLabel = document.getElementById('psv-download-all-label');
-      if (topDlBtn) topDlBtn.classList.toggle('hidden', n < 2);
+      if (topDlBtn) topDlBtn.classList.toggle('hidden', n < 1);
       if (topDlLabel) topDlLabel.textContent = t.downloadSelectedLabel;
-      document.querySelectorAll('.psv-card-checkbox-wrap[data-id]').forEach(btn => {
-        const selected = window._psvSelectedIds.has(btn.dataset.id);
-        btn.classList.toggle('bg-[#16a34a]', selected);
-        btn.classList.toggle('bg-white/85', !selected);
-        const check = btn.querySelector('svg');
-        if (check) check.setAttribute('stroke', selected ? '#fff' : 'transparent');
-        const outer = btn.closest('.psv-card-outer');
-        if (outer) outer.classList.toggle('psv-card-selected', selected);
-      });
     }
 
+    // Re-renders the whole grid on every selection change rather than patching individual
+    // nodes — the checkmark overlay only exists in the markup at all while select mode is on
+    // (see renderPublicShareModels), so toggling it needs the template re-evaluated anyway.
+    // The grids here are small (a curated share link, not the full catalog), so this stays cheap.
     window.togglePsvSelectMode = function() {
       window._psvSelectMode = !window._psvSelectMode;
       if (!window._psvSelectMode) window._psvSelectedIds.clear();
       const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
       const label = document.getElementById('psv-select-mode-label');
       if (label) label.textContent = window._psvSelectMode ? t.cancelSelectLabel : t.selectLabel;
-      document.querySelectorAll('.psv-card-checkbox-wrap').forEach(w => w.classList.toggle('hidden', !window._psvSelectMode));
-      updatePsvSelectionUI();
+      window.renderPublicShareModels(allModels, allFolders);
     };
 
     window.togglePsvCardSelect = function(modelId) {
       if (window._psvSelectedIds.has(modelId)) window._psvSelectedIds.delete(modelId);
       else window._psvSelectedIds.add(modelId);
-      updatePsvSelectionUI();
+      window.renderPublicShareModels(allModels, allFolders);
     };
 
     window.togglePsvSelectAll = function() {
       const allSelected = allModels.length > 0 && allModels.every(m => window._psvSelectedIds.has(m.id));
       if (allSelected) window._psvSelectedIds.clear();
       else allModels.forEach(m => window._psvSelectedIds.add(m.id));
-      updatePsvSelectionUI();
+      window.renderPublicShareModels(allModels, allFolders);
     };
 
     let _psvToastTimer = null;
@@ -6617,21 +6622,22 @@ service cloud.firestore {
         grid.innerHTML = models.map(m => {
           const id = escapeHtml(m.id);
           const isSelected = window._psvSelectedIds.has(m.id);
+          const tapAction = window._psvSelectMode
+            ? `window.togglePsvCardSelect('${id}')`
+            : `window.openPsvImageModal('${id}')`;
+          // The checkmark sits centered over the photo (not a corner) — every corner is already
+          // used by the discount badge, the age/gender/season stack, the code, or the price, so
+          // a corner checkbox always collided with one of those instead of being its own thing.
           return `
           <div class="flex flex-col gap-2">
-            <div class="relative psv-card-outer ${isSelected ? 'psv-card-selected' : ''}" onclick="window.openPsvImageModal('${id}')" data-model-id="${id}">
+            <div class="relative psv-card-outer ${isSelected ? 'psv-card-selected' : ''}" onclick="${tapAction}" data-model-id="${id}">
               ${cardHTML(m)}
-              <button type="button" data-id="${id}"
-                class="psv-card-checkbox-wrap ${window._psvSelectMode ? '' : 'hidden'} absolute top-2 start-2 z-20 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-lg transition-colors ${isSelected ? 'bg-[#16a34a]' : 'bg-white/85'}"
-                onclick="event.stopPropagation(); window.togglePsvCardSelect('${id}')">
-                <svg class="w-4.5 h-4.5" fill="none" stroke="${isSelected ? '#fff' : 'transparent'}" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-              </button>
+              ${window._psvSelectMode ? `<div class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none ${isSelected ? '' : 'psv-select-dim'}">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 border-white shadow-lg transition-colors ${isSelected ? 'bg-[#16a34a]' : 'bg-black/35'}">
+                  <svg class="w-5 h-5" fill="none" stroke="${isSelected ? '#fff' : 'rgba(255,255,255,0.7)'}" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+              </div>` : ''}
             </div>
-            <button onclick="window.downloadPublicShareImage('${id}')"
-              class="w-full h-9 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#2d2d4e] transition-colors">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              ${escapeHtml(t.downloadLabel)}
-            </button>
           </div>`;
         }).join('');
       }
