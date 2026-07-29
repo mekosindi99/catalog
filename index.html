@@ -1906,6 +1906,29 @@
     </main>
   </div>
 
+  <!-- Quick-view popup shown when the customer taps a photo in the public share view — bigger
+       image + badges (age/gender/season) + price, floating over everything, closable via the
+       red X or by tapping outside. -->
+  <div id="psv-image-modal" class="hidden fixed inset-0 z-[10000] items-center justify-center p-4" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)"
+    onclick="if(event.target===this) window.closePsvImageModal()">
+    <div class="relative bg-white rounded-3xl w-full max-w-xs shadow-2xl overflow-hidden" style="animation:modalIn 0.2s ease">
+      <button onclick="window.closePsvImageModal()"
+        class="absolute top-2.5 start-2.5 z-10 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <img id="psv-modal-img" src="" alt="" class="w-full aspect-square object-cover">
+      <div class="p-4 space-y-3">
+        <div id="psv-modal-badges" class="flex flex-wrap items-center gap-1.5"></div>
+        <div id="psv-modal-price" class="flex items-center gap-2"></div>
+        <button onclick="window.downloadPublicShareImage(window._psvModalId)"
+          class="w-full h-11 rounded-xl bg-[#16a34a] text-white text-sm font-bold flex items-center justify-center gap-2 hover:bg-[#15803d] transition-colors shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span id="psv-modal-download-label">Download</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- FIREBASE RULES BANNER -->
   <div id="rules-banner" class="hidden bg-amber-50 border-b-2 border-amber-300">
     <div class="max-w-3xl mx-auto px-4 py-4">
@@ -6356,7 +6379,7 @@ service cloud.firestore {
         grid.classList.remove('hidden');
         grid.innerHTML = models.map(m => `
           <div class="flex flex-col gap-2">
-            ${cardHTML(m)}
+            <div onclick="window.openPsvImageModal('${escapeHtml(m.id)}')">${cardHTML(m)}</div>
             <button onclick="window.downloadPublicShareImage('${escapeHtml(m.id)}')"
               class="w-full h-9 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#2d2d4e] transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -6364,6 +6387,47 @@ service cloud.firestore {
             </button>
           </div>`).join('');
       }
+    };
+
+    // Quick-view popup opened by tapping a photo in the public share view — bigger image plus
+    // the age/gender/season badges and price, matching the storefront's own product popup style.
+    window._psvModalId = null;
+    window.openPsvImageModal = function(modelId) {
+      const m = allModels.find(x => x.id === modelId);
+      if (!m) return;
+      window._psvModalId = modelId;
+      const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
+      const img = document.getElementById('psv-modal-img');
+      if (img) img.src = optimizedCloudinaryUrl(m.imageUrl, m.imageSize) || '';
+      const badgesEl = document.getElementById('psv-modal-badges');
+      if (badgesEl) {
+        const pills = [];
+        if (m.ageGroup) {
+          cleanAgeStr(m.ageGroup).split(',').map(a => a.trim()).filter(Boolean).forEach(a => {
+            pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">👤 ${escapeHtml(formatAgeTag(a))}</span>`);
+          });
+        }
+        if (m.gender) pills.push(`<span style="background:#fce7f3;color:#be185d;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(m.gender)}</span>`);
+        if (m.season) pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;">${escapeHtml(m.season)}</span>`);
+        badgesEl.innerHTML = pills.join('');
+      }
+      const priceEl = document.getElementById('psv-modal-price');
+      if (priceEl) {
+        const priceInfo = getDiscountedPrice(m);
+        priceEl.innerHTML = priceInfo.hasDiscount
+          ? `<span style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:999px;">-${priceInfo.pct}%</span>
+             <span style="color:#9ca3af;font-size:0.8rem;text-decoration:line-through;">${fmt(priceInfo.orig)}</span>
+             <span style="color:#dc2626;font-size:1.1rem;font-weight:900;">${fmt(priceInfo.final)}</span>`
+          : `<span style="color:#1a1a2e;font-size:1.1rem;font-weight:900;">${fmt(priceInfo.orig)}</span>`;
+      }
+      const dlLabel = document.getElementById('psv-modal-download-label');
+      if (dlLabel) dlLabel.textContent = t.downloadLabel;
+      const modal = document.getElementById('psv-image-modal');
+      if (modal) { modal.style.display = 'flex'; modal.classList.remove('hidden'); }
+    };
+    window.closePsvImageModal = function() {
+      const modal = document.getElementById('psv-image-modal');
+      if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
     };
 
     window.downloadPublicShareImage = async function(modelId) {
