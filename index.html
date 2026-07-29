@@ -6674,22 +6674,10 @@ service cloud.firestore {
       } catch (e) {
         console.error('short link creation failed, falling back to long link:', e);
       }
-      // Mask our own domain too: da.gd is a free, no-signup shortener that (unlike most
-      // shorteners) allows direct browser calls, so it can run right here with no server of
-      // ours involved. If it's unreachable for any reason, the ?s= link above still works fine
-      // on its own — this is purely cosmetic on top of it.
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch(`https://da.gd/shorten?url=${encodeURIComponent(url)}`, { signal: controller.signal });
-        clearTimeout(timer);
-        if (res.ok) {
-          const shortened = (await res.text()).trim();
-          if (/^https:\/\/da\.gd\/[A-Za-z0-9_-]+$/.test(shortened)) url = shortened;
-        }
-      } catch (e) {
-        console.error('da.gd shortening failed, using our own short link:', e);
-      }
+      // Note: third-party shorteners (da.gd, TinyURL, etc.) were tried and dropped — they either
+      // block plain browser calls (no CORS) or, worse, insert their own "fresh link, please
+      // inspect carefully" anti-phishing warning page that exposes this exact domain anyway
+      // and looks scarier than just sending our own short, real link directly.
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(url);
