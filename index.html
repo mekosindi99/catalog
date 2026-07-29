@@ -6452,10 +6452,14 @@ service cloud.firestore {
       const priceEl = document.getElementById('psv-modal-price');
       if (priceEl) {
         const priceInfo = getDiscountedPrice(m);
+        // This container inherits RTL direction (Arabic/Kurdish), which visually reverses a
+        // flex row from the order written here — so to show, left-to-right, the discount %
+        // first then the final price then the struck-through original, the markup itself has
+        // to be written in the OPPOSITE order (original, final, discount).
         priceEl.innerHTML = priceInfo.hasDiscount
-          ? `<span style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:999px;">-${priceInfo.pct}%</span>
-             <span style="color:#9ca3af;font-size:0.8rem;text-decoration:line-through;">${fmt(priceInfo.orig)}</span>
-             <span style="color:#dc2626;font-size:1.1rem;font-weight:900;">${fmt(priceInfo.final)}</span>`
+          ? `<span style="color:#9ca3af;font-size:0.8rem;text-decoration:line-through;">${fmt(priceInfo.orig)}</span>
+             <span style="color:#dc2626;font-size:1.1rem;font-weight:900;">${fmt(priceInfo.final)}</span>
+             <span style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:999px;">-${priceInfo.pct}%</span>`
           : `<span style="color:#1a1a2e;font-size:1.1rem;font-weight:900;">${fmt(priceInfo.orig)}</span>`;
       }
       const dlLabel = document.getElementById('psv-modal-download-label');
