@@ -2366,7 +2366,7 @@ service cloud.firestore {
         <input type="hidden" id="f-folder-id" value="" />
         <!-- Image Upload -->
         <div>
-          <label class="block text-xs font-bold text-gray-600 mb-2">Model Image</label>
+          <label class="block text-xs font-bold text-gray-600 mb-2" data-i18n="modelImage">Model Image</label>
           <div id="drop-zone"
             class="drop-zone rounded-xl p-4 text-center cursor-pointer bg-orange-50/50 relative"
             ondragover="handleDragOver(event)"
@@ -2393,8 +2393,8 @@ service cloud.firestore {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
               </div>
-              <p class="text-sm font-semibold text-gray-600">Drag image here or click to select</p>
-              <p class="text-xs text-gray-400 mt-1">JPG, PNG, WEBP — up to 10MB</p>
+              <p class="text-sm font-semibold text-gray-600" data-i18n="dragImageHere">Drag image here or click to select</p>
+              <p class="text-xs text-gray-400 mt-1" data-i18n="imageFormats">JPG, PNG, WEBP — up to 10MB</p>
             </div>
           </div>
 
@@ -2410,15 +2410,15 @@ service cloud.firestore {
 
           <!-- Image Size -->
           <div class="mt-3">
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Image Size</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="imageSize">Image Size</label>
             <div class="relative">
               <select id="f-img-size"
                 class="w-full h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition appearance-none">
-                <option value="original">Original (no resize)</option>
-                <option value="1080x1080">Square — 1080 × 1080</option>
-                <option value="1080x1350">Portrait — 1080 × 1350</option>
-                <option value="1080x1920">Story — 1080 × 1920</option>
-                <option value="800x800">Square — 800 × 800</option>
+                <option value="original" data-i18n="imgOriginal">Original (no resize)</option>
+                <option value="1080x1080" data-i18n="imgSquare1080">Square — 1080 × 1080</option>
+                <option value="1080x1350" data-i18n="imgPortrait">Portrait — 1080 × 1350</option>
+                <option value="1080x1920" data-i18n="imgStory">Story — 1080 × 1920</option>
+                <option value="800x800" data-i18n="imgSquare800">Square — 800 × 800</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2433,7 +2433,7 @@ service cloud.firestore {
         <!-- Form Fields -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Model Code *</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="modelCode">Model Code *</label>
             <div class="relative flex items-center">
               <input id="f-code" type="text" placeholder="e.g. S102"
                 class="w-full h-10 px-3 pr-9 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
@@ -2447,12 +2447,12 @@ service cloud.firestore {
             </div>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Serial Number *</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="serialNumber">Serial Number *</label>
             <input id="f-serial" type="number" placeholder="1"
               class="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
           </div>
           <div class="col-span-2">
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Age Group *</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="ageGroup">Age Group *</label>
             <div id="age-tags-wrap" class="flex flex-wrap gap-2 mb-2 min-h-[0px]"></div>
             <div class="flex items-center gap-1.5">
               <input id="age-from-num" type="number" min="1" max="99" placeholder="2"
@@ -2483,29 +2483,29 @@ service cloud.firestore {
             <p class="text-[11px] text-gray-400 mt-1.5">Example: <span class="font-bold text-gray-500">2y _ 3y</span> or <span class="font-bold text-gray-500">6m _ 12m</span> — Press + to add range</p>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Price *</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="price">Price *</label>
             <input id="f-price" type="number" placeholder="15000"
               class="w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Type</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="type">Type</label>
             <select id="f-category" data-option-field="categories"
               class="catalog-option-select w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
-              <option value="">— None —</option>
+              <option value="" data-i18n="noneOption">— None —</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Season</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="season">Season</label>
             <select id="f-season" data-option-field="seasons"
               class="catalog-option-select w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
-              <option value="">— None —</option>
+              <option value="" data-i18n="noneOption">— None —</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1.5">Gender</label>
+            <label class="block text-xs font-bold text-gray-600 mb-1.5" data-i18n="gender">Gender</label>
             <select id="f-gender" data-option-field="genders"
               class="catalog-option-select w-full h-10 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#e85d3a]/30 focus:border-[#e85d3a] transition">
-              <option value="">— None —</option>
+              <option value="" data-i18n="noneOption">— None —</option>
             </select>
           </div>
         </div>
@@ -2643,8 +2643,8 @@ service cloud.firestore {
           <div class="flex items-center gap-2">
             <span style="font-size:1.1rem">🚫</span>
             <div>
-              <p class="text-sm font-bold text-gray-800">Exclude from discount</p>
-              <p class="text-xs text-gray-400 mt-0.5">No discount applies to this (folder-wide or global)</p>
+              <p class="text-sm font-bold text-gray-800" data-i18n="excludeFromDiscount">Exclude from discount</p>
+              <p class="text-xs text-gray-400 mt-0.5" data-i18n="excludeFromDiscountDesc">No discount applies to this (folder-wide or global)</p>
             </div>
           </div>
           <div style="position:relative;width:44px;height:24px;flex-shrink:0;cursor:pointer;" onclick="(function(){var cb=document.getElementById('f-exclude-discount');cb.checked=!cb.checked;var track=document.getElementById('exclude-discount-track');var thumb=document.getElementById('exclude-discount-thumb');if(cb.checked){track.style.background='#ef4444';thumb.style.transform='translateX(20px)';}else{track.style.background='#d1d5db';thumb.style.transform='translateX(0)';}})()">
@@ -2657,7 +2657,7 @@ service cloud.firestore {
         <!-- Submit -->
         <div class="flex gap-2 pt-1">
           <button onclick="closeModal()"
-            class="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+            class="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors" data-i18n="cancel">
             Cancel
           </button>
           <button id="save-btn" onclick="saveModel()"
@@ -2687,7 +2687,7 @@ service cloud.firestore {
         <p id="delete-modal-desc" class="text-sm text-gray-500 mb-5">Are you sure? The model will be marked "Sold Out" and moved to the end of the folder.</p>
         <div class="flex gap-2">
           <button onclick="closeDeleteModal()"
-            class="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+            class="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors" data-i18n="cancel">
             Cancel
           </button>
           <button id="confirm-delete-btn" onclick="confirmDelete()"
@@ -2722,7 +2722,7 @@ service cloud.firestore {
           </a>
         </div>
         <button onclick="closeDeleteModal()"
-          class="w-full h-10 rounded-xl bg-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors">
+          class="w-full h-10 rounded-xl bg-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors" data-i18n="done">
           Done
         </button>
       </div>
@@ -3500,6 +3500,40 @@ service cloud.firestore {
         ctxUnhideFromSearch: 'إظهار في البحث',
         ctxFontSizes: 'أحجام الخط',
         ctxMoveToTrash: 'نقل للمحذوفات',
+        addNewModel: 'إضافة موديل جديد',
+        editModel: 'تعديل الموديل',
+        modelImage: 'صورة الموديل',
+        dragImageHere: 'اسحب الصورة هنا أو اضغط للاختيار',
+        imageFormats: 'JPG, PNG, WEBP — حتى 10 ميجا',
+        imageSize: 'حجم الصورة',
+        imgOriginal: 'الأصلي (بدون تغيير)',
+        imgSquare1080: 'مربع — 1080 × 1080',
+        imgPortrait: 'طولي — 1080 × 1350',
+        imgStory: 'ستوري — 1080 × 1920',
+        imgSquare800: 'مربع — 800 × 800',
+        modelCode: 'كود الموديل *',
+        serialNumber: 'الرقم التسلسلي *',
+        ageGroup: 'الفئة العمرية *',
+        price: 'السعر *',
+        type: 'النوع',
+        season: 'الموسم',
+        gender: 'الجنس',
+        noneOption: '— بدون —',
+        excludeFromDiscount: 'استثناء من الخصم',
+        excludeFromDiscountDesc: 'ما ينطبق عليه أي خصم (فولدر أو عام)',
+        cancel: 'إلغاء',
+        save: 'حفظ',
+        deleteModel: 'حذف الموديل',
+        confirm: 'تأكيد',
+        done: 'تم',
+        saving: 'جاري الحفظ...',
+        update: 'تحديث',
+        markSoldOutTitle: 'وضعه "نافذ"؟',
+        markSoldOutDesc: 'الموديل رح يصير معلّم "نافذ" وينتقل تلقائياً لآخر الفولدر.',
+        markSoldOutBtn: '📦 نافذ',
+        deleteRequestTitle: 'طلب حذف',
+        deleteRequestDesc: 'رح يُرسل طلب حذف للأدمن للمراجعة.',
+        confirmRequestBtn: 'تأكيد الطلب',
       },
       ku: {
         dir: 'rtl', flag: '<svg viewBox="0 0 90 60" style="width:18px;height:13px;border-radius:2px;"><rect width="90" height="60" fill="#ED1C24"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#149F4B"/><circle cx="45" cy="30" r="9" fill="#FDBB11"/><circle cx="45" cy="30" r="6.5" fill="#fff"/></svg>', code: 'KU',
@@ -3546,6 +3580,40 @@ service cloud.firestore {
         ctxUnhideFromSearch: 'پیشاندان لە گەڕان',
         ctxFontSizes: 'قەبارەی فۆنت',
         ctxMoveToTrash: 'گواستنەوە بۆ زبڵدان',
+        addNewModel: 'زیادکردنی مۆدێلی نوێ',
+        editModel: 'دەستکاری مۆدێل',
+        modelImage: 'وێنەی مۆدێل',
+        dragImageHere: 'وێنە بهێنە بۆ ئێرە یان کلیک بکە بۆ هەڵبژاردن',
+        imageFormats: 'JPG, PNG, WEBP — تا 10 مێگابایت',
+        imageSize: 'قەبارەی وێنە',
+        imgOriginal: 'ڕەسەن (بێ گۆڕان)',
+        imgSquare1080: 'چوارگۆشە — 1080 × 1080',
+        imgPortrait: 'ستوونی — 1080 × 1350',
+        imgStory: 'ستۆری — 1080 × 1920',
+        imgSquare800: 'چوارگۆشە — 800 × 800',
+        modelCode: 'کۆدی مۆدێل *',
+        serialNumber: 'ژمارەی زنجیرەیی *',
+        ageGroup: 'گروپی تەمەن *',
+        price: 'نرخ *',
+        type: 'جۆر',
+        season: 'وەرز',
+        gender: 'ڕەگەز',
+        noneOption: '— هیچ —',
+        excludeFromDiscount: 'دەرکردن لە داشکاندن',
+        excludeFromDiscountDesc: 'هیچ داشکاندنێک ناخرێتە سەری (فۆڵدەر یان گشتی)',
+        cancel: 'پاشگەزبوونەوە',
+        save: 'پاشەکەوتکردن',
+        deleteModel: 'سڕینەوەی مۆدێل',
+        confirm: 'دڵنیاکردنەوە',
+        done: 'تەواو',
+        saving: 'پاشەکەوتکردن...',
+        update: 'نوێکردنەوە',
+        markSoldOutTitle: 'وەک فرۆشراو نیشان بدرێت؟',
+        markSoldOutDesc: 'مۆدێلەکە خۆکارانە دەبێتە "فرۆشراو" و دەچێتە کۆتایی فۆڵدەرەکە.',
+        markSoldOutBtn: '📦 فرۆشراو',
+        deleteRequestTitle: 'داواکاری سڕینەوە',
+        deleteRequestDesc: 'داواکاریەکی سڕینەوە بۆ ئەدمین دەنێردرێت بۆ پێداچوونەوە.',
+        confirmRequestBtn: 'دڵنیاکردنەوەی داواکاری',
       },
       en: {
         dir: 'ltr', flag: '🇺🇸', code: 'EN',
@@ -3592,6 +3660,40 @@ service cloud.firestore {
         ctxUnhideFromSearch: 'Unhide from Search',
         ctxFontSizes: 'Font Sizes',
         ctxMoveToTrash: 'Move to Trash',
+        addNewModel: 'Add New Model',
+        editModel: 'Edit Model',
+        modelImage: 'Model Image',
+        dragImageHere: 'Drag image here or click to select',
+        imageFormats: 'JPG, PNG, WEBP — up to 10MB',
+        imageSize: 'Image Size',
+        imgOriginal: 'Original (no resize)',
+        imgSquare1080: 'Square — 1080 × 1080',
+        imgPortrait: 'Portrait — 1080 × 1350',
+        imgStory: 'Story — 1080 × 1920',
+        imgSquare800: 'Square — 800 × 800',
+        modelCode: 'Model Code *',
+        serialNumber: 'Serial Number *',
+        ageGroup: 'Age Group *',
+        price: 'Price *',
+        type: 'Type',
+        season: 'Season',
+        gender: 'Gender',
+        noneOption: '— None —',
+        excludeFromDiscount: 'Exclude from discount',
+        excludeFromDiscountDesc: 'No discount applies to this (folder-wide or global)',
+        cancel: 'Cancel',
+        save: 'Save',
+        deleteModel: 'Delete Model',
+        confirm: 'Confirm',
+        done: 'Done',
+        saving: 'Saving...',
+        update: 'Update',
+        markSoldOutTitle: 'Mark as sold out?',
+        markSoldOutDesc: 'The model will be marked "Sold Out" and moved to the end of the folder automatically.',
+        markSoldOutBtn: '📦 Sold Out',
+        deleteRequestTitle: 'Delete Request',
+        deleteRequestDesc: 'A delete request will be sent to the admin for review.',
+        confirmRequestBtn: 'Confirm Request',
       },
     };
     window._appLang = localStorage.getItem('appLang') || 'ar';
@@ -3812,7 +3914,7 @@ service cloud.firestore {
     function setSaving(v) {
       document.getElementById("save-btn").disabled = v;
       document.getElementById("save-spinner").classList.toggle("hidden", !v);
-      document.getElementById("save-label").textContent = v ? "Saving..." : (editingId ? "Update" : "Save");
+      document.getElementById("save-label").textContent = v ? window.t('saving') : (editingId ? window.t('update') : window.t('save'));
     }
     function fmt(n) { return Number(n).toLocaleString("en-US"); }
 
@@ -6427,8 +6529,8 @@ service cloud.firestore {
       }
       editingId = null;
       resetForm();
-      document.getElementById("modal-title").textContent = "Add New Model";
-      document.getElementById("save-label").textContent  = "Save";
+      document.getElementById("modal-title").textContent = window.t('addNewModel');
+      document.getElementById("save-label").textContent  = window.t('save');
       // Save folderId directly into the modal when it opens
       const folderInput = document.getElementById("f-folder-id");
       if (folderInput) folderInput.value = currentFolderId || "";
@@ -6476,8 +6578,8 @@ service cloud.firestore {
       if (!model) return;
       editingId = id;
       resetForm();
-      document.getElementById("modal-title").textContent = "Edit Model";
-      document.getElementById("save-label").textContent  = "Update";
+      document.getElementById("modal-title").textContent = window.t('editModel');
+      document.getElementById("save-label").textContent  = window.t('update');
       // Save folderId into the modal
       const folderInput = document.getElementById("f-folder-id");
       if (folderInput) folderInput.value = model.folderId || currentFolderId || "";
@@ -6600,13 +6702,13 @@ service cloud.firestore {
       const descEl  = document.getElementById("delete-modal-desc");
       const btnLbl  = document.getElementById("confirm-delete-btn-label");
       if (_role === "admin") {
-        if (titleEl) titleEl.textContent = "Mark as sold out?";
-        if (descEl)  descEl.textContent  = 'The model will be marked "Sold Out" and moved to the end of the folder automatically.';
-        if (btnLbl)  btnLbl.textContent  = "📦 Sold Out";
+        if (titleEl) titleEl.textContent = window.t('markSoldOutTitle');
+        if (descEl)  descEl.textContent  = window.t('markSoldOutDesc');
+        if (btnLbl)  btnLbl.textContent  = window.t('markSoldOutBtn');
       } else {
-        if (titleEl) titleEl.textContent = "Delete Request";
-        if (descEl)  descEl.textContent  = "A delete request will be sent to the admin for review.";
-        if (btnLbl)  btnLbl.textContent  = "Confirm Request";
+        if (titleEl) titleEl.textContent = window.t('deleteRequestTitle');
+        if (descEl)  descEl.textContent  = window.t('deleteRequestDesc');
+        if (btnLbl)  btnLbl.textContent  = window.t('confirmRequestBtn');
       }
       showModal("delete-modal");
     };
