@@ -6421,8 +6421,8 @@ service cloud.firestore {
         deselectAllLabel: 'إلغاء التحديد',
         selectedCount: '{n} محدد',
         downloadSelectedLabel: 'تحميل',
-        toastDownloadedOne: '✓ تم تحميل الصورة — تحقق من معرض الصور',
-        toastDownloadedMany: '✓ تم تحميل {n} صورة — تحقق من معرض الصور',
+        toastDownloadedOne: '✓ تم تنزيل الصورة، تقدر تشوفها داخل المعرض (Gallery)',
+        toastDownloadedMany: '✓ تم تنزيل الصور، تقدر تشوفها داخل المعرض (Gallery)',
       },
       ku: {
         dir: 'rtl', flag: '<svg viewBox="0 0 90 60" style="width:18px;height:13px;border-radius:2px;"><rect width="90" height="60" fill="#ED1C24"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#149F4B"/><circle cx="45" cy="30" r="9" fill="#FDBB11"/><circle cx="45" cy="30" r="6.5" fill="#fff"/></svg>', code: 'KU',
@@ -6695,7 +6695,11 @@ service cloud.firestore {
       try {
         const blob = await renderBadgedImageBlob(m, 'all');
         if (!blob) return;
-        const filename = `${m.modelCode || 'model'}.jpg`;
+        // A unique suffix per download — without it, re-downloading the same model (a repeat
+        // visit, or two different share links with the same model) collides with a
+        // same-named file already in Downloads, and Chrome interrupts with its own
+        // "Download file again?" confirmation prompt that we can't suppress otherwise.
+        const filename = `${m.modelCode || 'model'}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}.jpg`;
         const savedNatively = await window.saveBlobToDevice(blob, filename, true);
         if (!savedNatively) {
           const url = URL.createObjectURL(blob);
