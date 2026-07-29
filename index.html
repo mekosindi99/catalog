@@ -1836,11 +1836,19 @@
           <img src="" alt="" id="psv-logo-img" class="w-full h-full object-cover hidden">
         </div>
         <span id="psv-app-name" class="font-extrabold text-gray-800 text-sm">Catalog</span>
+        <div class="ms-auto flex items-center gap-1" id="psv-lang-switch">
+          <button type="button" onclick="window.setPsvLanguage('ar')" data-psv-lang-btn="ar"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition-colors">عربي</button>
+          <button type="button" onclick="window.setPsvLanguage('ku')" data-psv-lang-btn="ku"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition-colors">کوردی</button>
+          <button type="button" onclick="window.setPsvLanguage('en')" data-psv-lang-btn="en"
+            class="px-2.5 py-1 rounded-lg text-xs font-bold transition-colors">EN</button>
+        </div>
       </div>
     </header>
     <main class="max-w-5xl mx-auto px-3 sm:px-6 py-5">
       <div id="psv-share-banner" class="hidden mb-4 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 flex-wrap" style="background:#eff6ff;border:1px solid #bfdbfe;">
-        <span class="text-sm font-semibold text-blue-900">📤 You can share these photos with your friends!</span>
+        <span class="text-sm font-semibold text-blue-900" id="psv-banner-text">📤 You can share these photos with your friends!</span>
         <button type="button" onclick="window.sharePublicShareLink()"
           class="h-9 px-4 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 shrink-0">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
@@ -5732,6 +5740,74 @@ service cloud.firestore {
       renderGrid(list);
     }
 
+    // ── Public share view language (Arabic / Kurdish Sorani / English) — the visitor picks,
+    // choice remembered in localStorage, defaults to Arabic since that's this shop's main
+    // customer base. Kept as a flat dict rather than a full i18n framework since this view
+    // only has a handful of static strings. ──
+    const PSV_I18N = {
+      ar: {
+        dir: 'rtl',
+        bannerText: '📤 تقدر تشارك هذي الصور مع أصدقائك!',
+        shareLabel: 'مشاركة',
+        copiedLabel: 'تم النسخ ✓',
+        shareText: 'شوف هذي المنتجات',
+        loadingText: 'جاري التحميل...',
+        emptyText: 'لا توجد عناصر لعرضها بهذا الرابط.',
+        downloadLabel: 'تحميل',
+      },
+      ku: {
+        dir: 'rtl',
+        bannerText: '📤 دەتوانیت ئەم وێنانە لەگەڵ هاوڕێکانت هاوبەش بکەیت!',
+        shareLabel: 'هاوبەشکردن',
+        copiedLabel: 'کۆپی کرا ✓',
+        shareText: 'سەیری ئەم بەرهەمانە بکە',
+        loadingText: 'بارکردن...',
+        emptyText: 'ئەم بەستەرە هیچ شتێکی تێدا نییە بۆ پیشاندان.',
+        downloadLabel: 'داگرتن',
+      },
+      en: {
+        dir: 'ltr',
+        bannerText: '📤 You can share these photos with your friends!',
+        shareLabel: 'Share',
+        copiedLabel: 'Copied ✓',
+        shareText: 'Check out these items',
+        loadingText: 'Loading...',
+        emptyText: 'This link has no items to show.',
+        downloadLabel: 'Download',
+      },
+    };
+    window._psvLang = localStorage.getItem('psvLang') || 'ar';
+
+    window.setPsvLanguage = function(lang) {
+      if (!PSV_I18N[lang]) return;
+      window._psvLang = lang;
+      localStorage.setItem('psvLang', lang);
+      applyPsvLanguage();
+      // Re-render so the Download button labels (baked into the grid's innerHTML) pick up
+      // the new language too — cheap since it's just re-stamping the same models.
+      if (allModels.length) window.renderPublicShareModels(allModels, allFolders);
+    };
+
+    window._applyPsvLanguage = applyPsvLanguage;
+    function applyPsvLanguage() {
+      const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
+      const psv = document.getElementById('public-share-view');
+      if (psv) { psv.dir = t.dir; psv.lang = window._psvLang; }
+      const bannerText = document.getElementById('psv-banner-text');
+      if (bannerText) bannerText.textContent = t.bannerText;
+      const shareLabel = document.getElementById('psv-share-btn-label');
+      if (shareLabel) shareLabel.textContent = t.shareLabel;
+      const loading = document.getElementById('psv-loading');
+      if (loading) loading.textContent = t.loadingText;
+      const empty = document.getElementById('psv-empty');
+      if (empty) empty.textContent = t.emptyText;
+      document.querySelectorAll('[data-psv-lang-btn]').forEach(btn => {
+        const active = btn.getAttribute('data-psv-lang-btn') === window._psvLang;
+        btn.style.background = active ? '#1a1a2e' : 'transparent';
+        btn.style.color = active ? '#fff' : '#9ca3af';
+      });
+    }
+
     // ── Public share view (?share=id,id,...) — read-only, no login. Reuses cardHTML
     // (already suppresses every edit/checkbox control when viewOnlyMode is true, which the
     // ?share= param sets) and adds one Download button per card. models/folders here come
@@ -5741,6 +5817,8 @@ service cloud.firestore {
     window.renderPublicShareModels = function(models, folders) {
       allModels = models;
       allFolders = folders;
+      applyPsvLanguage();
+      const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
       const loading = document.getElementById('psv-loading');
       const empty   = document.getElementById('psv-empty');
       const grid    = document.getElementById('psv-grid');
@@ -5759,7 +5837,7 @@ service cloud.firestore {
             <button onclick="window.downloadPublicShareImage('${escapeHtml(m.id)}')"
               class="w-full h-9 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-[#2d2d4e] transition-colors">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-              Download
+              ${escapeHtml(t.downloadLabel)}
             </button>
           </div>`).join('');
       }
@@ -5786,17 +5864,18 @@ service cloud.firestore {
     // Lets the anonymous visitor forward this exact same link onward — the link itself has
     // no expiry or per-recipient limit, so this can pass through any number of people.
     window.sharePublicShareLink = async function() {
+      const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
       const url = window.location.href;
       const label = document.getElementById('psv-share-btn-label');
       if (navigator.share) {
         try {
-          await navigator.share({ title: document.title, text: 'Check out these items', url });
+          await navigator.share({ title: document.title, text: t.shareText, url });
           return;
         } catch (e) { /* user cancelled, or unsupported — fall through to copy */ }
       }
       try {
         await navigator.clipboard.writeText(url);
-        if (label) { const prev = label.textContent; label.textContent = 'Copied ✓'; setTimeout(() => { label.textContent = prev; }, 1800); }
+        if (label) { const prev = label.textContent; label.textContent = t.copiedLabel; setTimeout(() => { label.textContent = prev; }, 1800); }
       } catch (e) {
         window.prompt('Copy this link:', url);
       }
@@ -9895,6 +9974,7 @@ service cloud.firestore {
       if (gate) gate.style.display = 'none';
       const psv = document.getElementById('public-share-view');
       if (psv) psv.classList.remove('hidden');
+      if (window._applyPsvLanguage) window._applyPsvLanguage();
 
       (async () => {
         try {
