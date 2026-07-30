@@ -2253,10 +2253,11 @@ service cloud.firestore {
        files handed to WhatsApp/any app) and Download (ZIP of the selected images). -->
   <div id="selection-bar" class="hidden">
     <span id="selection-bar-count" class="text-xs font-bold" style="white-space:nowrap;">0 selected</span>
-    <button type="button" onclick="window.copySelectedImages()" class="share-gated"
+    <button type="button" id="copy-selected-btn" onclick="window.copySelectedImages()" class="share-gated"
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#2d2d4e;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
-      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-      <span data-i18n="copy">Copy</span>
+      <svg id="copy-selected-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342a3 3 0 100 2.316m0-2.316a3 3 0 110 2.316m0-2.316l6.632 3.316m-6.632-5.632l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 8.632a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+      <svg id="copy-selected-spinner" class="w-3.5 h-3.5 hidden animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      <span id="copy-selected-label" data-i18n="copy">Copy</span>
     </button>
     <button type="button" onclick="window.downloadSelectedFromBar()" class="download-gated"
       style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#e85d3a;color:#fff;font-size:0.78rem;font-weight:700;white-space:nowrap;">
@@ -7601,11 +7602,30 @@ service cloud.firestore {
         return window.shareSelectedImages();
       }
 
-      if (await window.copyImageToClipboard(models)) return;
+      // Building each shared image (fetch + canvas badge draw) for several selected photos
+      // takes a couple of seconds with no visual change until the OS share sheet finally pops
+      // up — feels stuck/broken. Show a spinner on the button itself right away instead of
+      // relying only on the easy-to-miss status text in the bar.
+      const btn = document.getElementById('copy-selected-btn');
+      const icon = document.getElementById('copy-selected-icon');
+      const spinner = document.getElementById('copy-selected-spinner');
+      const label = document.getElementById('copy-selected-label');
+      if (btn) btn.disabled = true;
+      if (icon) icon.classList.add('hidden');
+      if (spinner) spinner.classList.remove('hidden');
+      if (label) label.textContent = 'Preparing...';
+      try {
+        if (await window.copyImageToClipboard(models)) return;
 
-      // Clipboard API unavailable/blocked — try the Web Share API (real file sharing on the
-      // mobile browsers that support it) before giving up.
-      return window.shareSelectedImagesWeb(models);
+        // Clipboard API unavailable/blocked — try the Web Share API (real file sharing on the
+        // mobile browsers that support it) before giving up.
+        return await window.shareSelectedImagesWeb(models);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('hidden');
+        if (spinner) spinner.classList.add('hidden');
+        if (label) label.textContent = window.t ? window.t('copy') : 'Copy';
+      }
     };
 
     // Builds a public, no-login-required link showing exactly the selected models — they can
