@@ -10294,6 +10294,12 @@ service cloud.firestore {
         // resurfacing here every time the gate reappeared after logout, leaving the button
         // unclickable until a full app restart.
         if (window._resetGateSubmit) window._resetGateSubmit();
+        // Bulk-selection (checked cards) and the current folder view are in-memory JS state
+        // that survives a logout/login cycle since the page never reloads — the next person
+        // to sign in on this device (a different role) was inheriting whatever the previous
+        // account had selected/open. Wipe both on every logout so each session starts clean.
+        if (window.clearCardSelection) window.clearCardSelection();
+        if (typeof showHomeView === 'function') showHomeView();
         window._pendingFolderId = null;
         window._currentUserAllowedFolders = null;
         window._isManagedUser = false;
