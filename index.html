@@ -1428,8 +1428,25 @@
 
   <!-- HEADER -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-orange-100 shadow-sm">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-12 sm:h-14 flex flex-nowrap items-center gap-2 sm:gap-3 overflow-visible">
-      <!-- Language switcher -->
+    <!-- dir="ltr" is forced here on purpose: switching the app language flips the whole
+         document's dir between ltr/rtl, which would otherwise reorder this flex row's children
+         (logo/language switcher swapping sides) every time the language changes. Pinning this
+         row to a fixed physical layout means only the translated TEXT changes, never the
+         position of the logo or the language switcher. -->
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-12 sm:h-14 flex flex-nowrap items-center gap-2 sm:gap-3 overflow-visible" dir="ltr">
+      <!-- Logo — clicking goes home. Pinned first/leftmost, and its own position never moves. -->
+      <div class="flex items-center gap-2 cursor-pointer min-w-0 shrink-0" onclick="goHome()">
+        <div id="header-logo-wrap" class="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
+          <img id="header-logo-img" src="" alt="Logo" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden');document.getElementById('header-logo-fallback').classList.remove('hidden')">
+          <svg id="header-logo-fallback" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+          </svg>
+        </div>
+        <!-- App name is intentionally NOT wired to data-i18n/translation — it stays the same
+             text ("Catalog") in every language, by design. -->
+        <span id="app-name-display" class="font-extrabold text-gray-800 text-sm sm:text-base truncate max-w-[140px] sm:max-w-none">Catalog</span>
+      </div>
+      <!-- Language switcher — right after the logo, never in the far corner. -->
       <div class="relative shrink-0" id="app-lang-switch">
         <button type="button" onclick="window.toggleAppLangMenu()"
           class="w-8 h-8 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center overflow-hidden text-base leading-none">
@@ -1456,16 +1473,7 @@
           </button>
         </div>
       </div>
-      <!-- Logo — clicking goes home -->
-      <div class="flex items-center gap-2 mr-auto cursor-pointer min-w-0 shrink-0" onclick="goHome()">
-        <div id="header-logo-wrap" class="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
-          <img id="header-logo-img" src="" alt="Logo" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden');document.getElementById('header-logo-fallback').classList.remove('hidden')">
-          <svg id="header-logo-fallback" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-          </svg>
-        </div>
-        <span id="app-name-display" class="font-extrabold text-gray-800 text-sm sm:text-base truncate max-w-[140px] sm:max-w-none">Catalog</span>
-      </div>
+      <div class="mr-auto"></div>
 
       <!-- Primary actions -->
       <div class="flex items-center gap-1.5 sm:gap-2 order-2 sm:order-none">
@@ -6943,10 +6951,12 @@ service cloud.firestore {
         );
       }
 
-      // Update notification bell — show ONLY for confirmed regular users, NEVER for admin or co_admin
+      // Update notification bell — shown for every authenticated role (admin, co_admin,
+      // regular user); the anonymous public share view has no header UI of its own and
+      // never reaches this code path, so it never sees the bell either way.
       const bellWrap = document.getElementById("notif-bell-wrap");
       if (bellWrap) {
-        bellWrap.style.display = (isManagedUser === true && role === "user") ? "flex" : "none";
+        bellWrap.style.display = isLoggedIn ? "flex" : "none";
       }
 
       // Enforce the "Download images" permission (Admin Panel → Users → permissions) on every
@@ -10244,11 +10254,11 @@ service cloud.firestore {
           window.loadDomainInfo().then(data => { if (typeof checkDomainExpiryWarning === 'function') checkDomainExpiryWarning(data); });
         }
 
-        // ── Check for missed notifications since last login (admin + regular users — not
-        // co_admin, since a co_admin is usually the one making the change and doesn't need
-        // to be told about their own edits; the anonymous public share view never reaches
-        // this code path at all, so it never sees this popup) ──
-        if (resolvedRole === "admin" || (window._isManagedUser && resolvedRole === "user")) {
+        // ── Check for missed notifications since last login — every authenticated role
+        // (admin, co_admin, regular user) sees changes made by anyone else, regardless of who
+        // made them. The anonymous public share view never runs this login flow at all, so it
+        // never reaches this code and never sees this popup. ──
+        if (resolvedRole === "admin" || resolvedRole === "co_admin" || (window._isManagedUser && resolvedRole === "user")) {
           const _notifCheckUser = user;
           const _waitAndCheck = () => {
             if (modelsLoaded && foldersLoaded) {
@@ -10788,8 +10798,9 @@ service cloud.firestore {
       const newModels = snap.docs.map(d=>({id:d.id,...d.data()}));
       const newIds = new Set(newModels.map(m => m.id));
 
-      // After initial load, detect changes — skip for admin (they see changes live)
-      if (_prevModelIds !== null && S.currentUser && !_isAdminUser()) {
+      // After initial load, detect changes — shown to every authenticated role including
+      // admin, so a change made by a co_admin (or another admin session) surfaces here too.
+      if (_prevModelIds !== null && S.currentUser) {
         const prevSet = _prevModelIds;
 
         snap.docChanges().forEach(change => {
@@ -10848,8 +10859,8 @@ service cloud.firestore {
       const newFolders = snap.docs.map(d=>({id:d.id,...d.data()}));
       const newFolderIds = new Set(newFolders.map(f => f.id));
 
-      // Detect folder changes — skip for admin (they see changes live)
-      if (_prevFolderIds !== null && S.currentUser && !_isAdminUser()) {
+      // Detect folder changes — shown to every authenticated role including admin.
+      if (_prevFolderIds !== null && S.currentUser) {
         snap.docChanges().forEach(change => {
           const data = change.doc.data();
           const folderName = data.name || "Folder";
