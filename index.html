@@ -8200,15 +8200,22 @@ service cloud.firestore {
       }
       setStatus(`Preparing ${models.length}...`);
       try {
+        // Each render is its own network fetch + canvas draw — running them one at a time
+        // (await inside a for loop) meant total wait time was the SUM of every image's fetch
+        // time. Firing them all at once with Promise.all lets the browser fetch all the
+        // Cloudinary images concurrently (browsers already allow several parallel requests per
+        // origin), so total wait drops to roughly the slowest single image instead of the sum
+        // of all of them. renderBadgedImageBlob itself is untouched — same output, same quality,
+        // same code path every other download/export feature (ZIP/Gallery/PDF) still uses.
+        const blobs = await Promise.all(
+          models.map(m => renderBadgedImageBlob(m, 'all').catch(() => null))
+        );
         const files = [];
-        for (let i = 0; i < models.length; i++) {
-          const m = models[i];
-          // Same code/price/age/discount badges as ZIP/Gallery export.
-          const blob = await renderBadgedImageBlob(m, 'all');
-          if (!blob) continue;
+        blobs.forEach((blob, i) => {
+          if (!blob) return;
           const seq = String(i + 1).padStart(2, '0');
-          files.push(new File([blob], `${seq}_${m.modelCode || 'model'}.jpg`, { type: blob.type || 'image/jpeg' }));
-        }
+          files.push(new File([blob], `${seq}_${models[i].modelCode || 'model'}.jpg`, { type: blob.type || 'image/jpeg' }));
+        });
         if (!files.length) { setStatus('Failed to prepare images'); return; }
         if (!navigator.canShare({ files })) {
           setStatus("This browser can't share files directly — use Download");
