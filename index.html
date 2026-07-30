@@ -9821,6 +9821,18 @@ service cloud.firestore {
         label.textContent = "Sign In";
       }
     };
+    // Auth succeeds, but the account gets rejected afterward (disabled/deleted/permission
+    // error) inside onAuthStateChanged — a separate scope from doGateLogin, so its own
+    // finally-block reset never runs. Without this, the gate reappears with the submit
+    // button still stuck disabled on "Signing in...", trapping the user.
+    window._resetGateSubmit = function() {
+      const btn = document.getElementById("gate-submit");
+      const spinner = document.getElementById("gate-spinner");
+      const label = document.getElementById("gate-label");
+      if (btn) btn.disabled = false;
+      if (spinner) spinner.classList.add("hidden");
+      if (label) label.textContent = "Sign In";
+    };
     window._fbLogout = async function() { await window._fbEndLoginSession(); await signOut(auth); S.showToast("Signed out","success"); };
 
     // ── Also close the session log if the tab/browser is closed without clicking Sign Out ──
@@ -10142,6 +10154,7 @@ service cloud.firestore {
               if (gateErr) gateErr.textContent = "Your account has been disabled. Contact the administrator.";
               const gate = document.getElementById("login-gate");
               if (gate) gate.style.display = "flex";
+              if (window._resetGateSubmit) window._resetGateSubmit();
               return;
             }
             // ✅ Valid managed account — role is either "co_admin" or "user" (default "user" for legacy records)
@@ -10164,6 +10177,7 @@ service cloud.firestore {
             if (gateErr) gateErr.textContent = "Your account has been deleted. Contact the administrator.";
             const gate = document.getElementById("login-gate");
             if (gate) gate.style.display = "flex";
+            if (window._resetGateSubmit) window._resetGateSubmit();
             return;
           }
         } catch(e) {
@@ -10179,6 +10193,7 @@ service cloud.firestore {
             if (gateErr) gateErr.textContent = "Access denied. Contact the administrator.";
             const gate = document.getElementById("login-gate");
             if (gate) gate.style.display = "flex";
+            if (window._resetGateSubmit) window._resetGateSubmit();
             return;
           }
         }
