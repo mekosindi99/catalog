@@ -5939,14 +5939,13 @@ service cloud.firestore {
       return (hit && hit[lang]) || u;
     }
     // English pluralizes the unit word ("1 year" vs "5 years"); Arabic/Kurdish don't need that
-    // here (سنة/ساڵی stay the same regardless of the number in this kind of phrase).
+    // here (سنة/ساڵ stay the same regardless of the number in this kind of phrase).
     function ageUnitWordPlural(u, n) {
       const lang = currentUiLang();
       if (lang === 'en') {
         const base = ageUnitWord(u);
         return (Number(n) === 1) ? base : base + 's';
       }
-      if (lang === 'ku') return u.toLowerCase() === 'm' ? 'مانگی' : 'ساڵی';
       return ageUnitWord(u);
     }
     function formatAgeTag(tag) {
@@ -5955,13 +5954,13 @@ service cloud.firestore {
         const lang = currentUiLang();
         const n1 = m[1], n2 = m[3];
         const w1 = ageUnitWordPlural(m[2], n1), w2 = ageUnitWordPlural(m[4], n2);
-        // Matches sonbola.shop's own phrasing per language, e.g. Arabic "من 1 سنة الى 5 سنة"
+        // Matches sonbola.shop's own phrasing per language, e.g. Arabic "1 سنة الى 5 سنة"
         // instead of a bare number/unit pair joined by a dash — reads correctly in each
         // language's natural word order instead of relying on a symbol ("–") that has no
         // inherent direction and gets mis-ordered when mixed with RTL script.
-        if (lang === 'ku') return `له ${n1} ${w1} بو ${n2} ${w2}`;
+        if (lang === 'ku') return `${n1} ${w1} بو ${n2} ${w2}`;
         if (lang === 'en') return `${n1} ${w1} to ${n2} ${w2}`;
-        return `من ${n1} ${w1} الى ${n2} ${w2}`;
+        return `${n1} ${w1} الى ${n2} ${w2}`;
       }
       const l = tag.match(/^(\d+)_(\d+)$/);
       if (l) return `${l[1]} – ${l[2]}`;
