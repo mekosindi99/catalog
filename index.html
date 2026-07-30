@@ -6493,6 +6493,7 @@ service cloud.firestore {
         downloadSelectedLabel: 'تحميل',
         toastDownloadedOne: '✓ تم تنزيل الصورة، تقدر تشوفها داخل المعرض (Gallery)',
         toastDownloadedMany: '✓ تم تنزيل الصور، تقدر تشوفها داخل المعرض (Gallery)',
+        toastInAppBrowser: '⚠️ التحميل ما يشتغل داخل ماسنجر/انستقرام. اضغط ⋯ فوق واختر "فتح بالمتصفح" ثم حمّل الصور',
       },
       ku: {
         dir: 'rtl', flag: '<svg viewBox="0 0 90 60" style="width:18px;height:13px;border-radius:2px;"><rect width="90" height="60" fill="#ED1C24"/><rect y="20" width="90" height="20" fill="#fff"/><rect y="40" width="90" height="20" fill="#149F4B"/><circle cx="45" cy="30" r="9" fill="#FDBB11"/><circle cx="45" cy="30" r="6.5" fill="#fff"/></svg>', code: 'KU',
@@ -6511,6 +6512,7 @@ service cloud.firestore {
         downloadSelectedLabel: 'داگرتن',
         toastDownloadedOne: '✓ وێنەکە داگیرا — سەیری گەلەری بکە',
         toastDownloadedMany: '✓ {n} وێنە داگیران — سەیری گەلەری بکە',
+        toastInAppBrowser: '⚠️ داگرتن لە ناو مێسنجەر/ئینستاگرام کار ناکات. کرتە لە ⋯ بکە و "کردنەوە بە وێبگەڕ" هەڵبژێرە',
       },
       en: {
         dir: 'ltr', flag: '🇺🇸', code: 'EN',
@@ -6529,8 +6531,19 @@ service cloud.firestore {
         downloadSelectedLabel: 'Download',
         toastDownloadedOne: '✓ Photo downloaded — check your gallery',
         toastDownloadedMany: '✓ {n} photos downloaded — check your gallery',
+        toastInAppBrowser: '⚠️ Downloads don\'t work inside Messenger/Instagram. Tap ⋯ above and choose "Open in browser", then download',
       },
     };
+    // Facebook/Messenger/Instagram (and a few others) open links in their own embedded WebView
+    // rather than the real browser. Those WebViews silently block the anchor+blob download this
+    // app uses — the click does nothing, no file is ever written, and no error is raised — so
+    // the app used to report "downloaded, check your gallery" when nothing had been saved.
+    // There's no way to force a save from inside them; the only real fix is telling the visitor
+    // to reopen the link in a proper browser.
+    function isInAppBrowser() {
+      const ua = navigator.userAgent || '';
+      return /FBAN|FBAV|FB_IAB|Messenger|Instagram|Line\/|TikTok|Snapchat/i.test(ua);
+    }
     window._psvLang = localStorage.getItem('appLang') || 'ar';
 
     window.togglePsvLangMenu = function() {
@@ -6646,7 +6659,10 @@ service cloud.firestore {
     };
 
     let _psvToastTimer = null;
-    function showPsvToast(msg) {
+    // ms defaults to the short confirmation timing; callers pass a longer value for messages
+    // that ask the visitor to actually go do something (e.g. reopen the link in a browser),
+    // which can't be read in 2.4s.
+    function showPsvToast(msg, ms) {
       const toast = document.getElementById('psv-toast');
       const textEl = document.getElementById('psv-toast-text');
       if (!toast || !textEl) return;
@@ -6654,13 +6670,16 @@ service cloud.firestore {
       toast.style.display = 'flex';
       toast.classList.remove('hidden');
       clearTimeout(_psvToastTimer);
-      _psvToastTimer = setTimeout(() => { toast.style.display = 'none'; toast.classList.add('hidden'); }, 2400);
+      _psvToastTimer = setTimeout(() => { toast.style.display = 'none'; toast.classList.add('hidden'); }, ms || 2400);
     }
 
     window.downloadSelectedPsvImages = async function() {
       const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
       const ids = Array.from(window._psvSelectedIds);
       if (!ids.length) return;
+      // Bail out before doing the work — inside Messenger/Instagram nothing can actually be
+      // saved, so going through the motions and then claiming success is worse than saying why.
+      if (isInAppBrowser()) { showPsvToast(t.toastInAppBrowser, 7000); return; }
       for (const id of ids) {
         await window.downloadPublicShareImage(id, /*silent=*/true);
         // A short gap between saves — back-to-back downloads without it get silently dropped
@@ -6768,6 +6787,15 @@ service cloud.firestore {
     window.downloadPublicShareImage = async function(modelId, silent) {
       const m = allModels.find(x => x.id === modelId);
       if (!m) return;
+      // See isInAppBrowser() — a download here can't succeed, so warn instead of pretending.
+      // Skipped when silent, since the bulk path already showed this same warning once.
+      if (isInAppBrowser()) {
+        if (!silent) {
+          const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
+          showPsvToast(t.toastInAppBrowser, 7000);
+        }
+        return;
+      }
       try {
         const blob = await renderBadgedImageBlob(m, 'all');
         if (!blob) return;
