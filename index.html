@@ -2366,54 +2366,6 @@ service cloud.firestore {
     </button>
   </div>
 
-  <!-- ==================== DOWNLOAD QUICK-PICK MODAL ==================== -->
-  <div id="dl-quick-backdrop"
-    onclick="closeDlQuickPick()"
-    style="display:none;position:fixed;inset:0;z-index:950;background:rgba(0,0,0,0.45);backdrop-filter:blur(3px);">
-  </div>
-  <div id="dl-quick-modal"
-    style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.92);z-index:951;
-           background:#1a1a2e;border-radius:20px;padding:22px 20px 18px;width:calc(100vw - 40px);max-width:320px;
-           box-shadow:0 24px 64px rgba(0,0,0,0.5);border:1.5px solid rgba(255,255,255,0.08);
-           transition:transform 0.22s cubic-bezier(.34,1.56,.64,1),opacity 0.22s ease;opacity:0;">
-    <p style="color:rgba(255,255,255,0.5);font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;">Choose download method</p>
-
-    <!-- ZIP option -->
-    <button onclick="dlQuickPickZip()"
-      style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:14px;
-             background:rgba(245,158,11,0.12);border:1.5px solid rgba(245,158,11,0.3);margin-bottom:10px;
-             cursor:pointer;transition:background 0.15s,transform 0.12s;text-align:left;"
-      onmouseover="this.style.background='rgba(245,158,11,0.2)'"
-      onmouseout="this.style.background='rgba(245,158,11,0.12)'">
-      <span style="width:40px;height:40px;border-radius:12px;background:rgba(245,158,11,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">🗜️</span>
-      <div>
-        <p style="color:#fff;font-size:0.88rem;font-weight:800;margin-bottom:2px;">ZIP File</p>
-        <p style="color:rgba(255,255,255,0.45);font-size:0.72rem;">All images in one file</p>
-      </div>
-    </button>
-
-    <!-- Gallery option -->
-    <button onclick="dlQuickPickGallery()"
-      style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:14px;
-             background:rgba(22,163,74,0.12);border:1.5px solid rgba(22,163,74,0.3);
-             cursor:pointer;transition:background 0.15s,transform 0.12s;text-align:left;"
-      onmouseover="this.style.background='rgba(22,163,74,0.2)'"
-      onmouseout="this.style.background='rgba(22,163,74,0.12)'">
-      <span style="width:40px;height:40px;border-radius:12px;background:rgba(22,163,74,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">📱</span>
-      <div>
-        <p style="color:#fff;font-size:0.88rem;font-weight:800;margin-bottom:2px;">Photo Gallery</p>
-        <p style="color:rgba(255,255,255,0.45);font-size:0.72rem;">Direct download to phone, no ZIP</p>
-      </div>
-    </button>
-
-    <button onclick="closeDlQuickPick()"
-      style="width:100%;margin-top:12px;padding:9px;border-radius:10px;background:rgba(255,255,255,0.06);
-             border:none;color:rgba(255,255,255,0.4);font-size:0.78rem;font-weight:700;cursor:pointer;">
-      Cancel
-    </button>
-  </div>
-
-
   <!-- ==================== GALLERY PROGRESS OVERLAY ==================== -->
   <div id="gallery-progress-backdrop"></div>
   <div id="gallery-progress-card">
@@ -4624,12 +4576,6 @@ service cloud.firestore {
       const el = document.getElementById('share-link-preview');
       if (el) el.textContent = url;
     }
-    window.selectShareRole = function(role) {
-      _shareRole = role;
-      const sel = document.getElementById('share-role-select');
-      if (sel) sel.value = role;
-      onShareRoleChange(role);
-    };
     window.onShareRoleChange = function(role) {
       _shareRole = role;
       const desc = document.getElementById('share-access-desc');
@@ -4763,59 +4709,6 @@ service cloud.firestore {
       setTimeout(function() { openFolderDlModalGallery(fid); }, 50);
     };
 
-
-    // ── Download quick-pick popup ──
-    let _dlQuickFolderId = null;
-    let _dlQuickJustOpened = false;
-    window.openDlQuickPick = function(folderId) {
-      _dlQuickFolderId = folderId;
-      const backdrop = document.getElementById('dl-quick-backdrop');
-      const modal    = document.getElementById('dl-quick-modal');
-      backdrop.style.display = 'block';
-      modal.style.display = 'block';
-      _dlQuickJustOpened = true;
-      setTimeout(() => { _dlQuickJustOpened = false; }, 300);
-      // animate in
-      requestAnimationFrame(() => {
-        modal.style.opacity = '1';
-        modal.style.transform = 'translate(-50%,-50%) scale(1)';
-      });
-    };
-    window.closeDlQuickPick = function() {
-      if (_dlQuickJustOpened) return;
-      const backdrop = document.getElementById('dl-quick-backdrop');
-      const modal    = document.getElementById('dl-quick-modal');
-      modal.style.opacity = '0';
-      modal.style.transform = 'translate(-50%,-50%) scale(0.92)';
-      setTimeout(() => {
-        modal.style.display = 'none';
-        backdrop.style.display = 'none';
-        _dlQuickFolderId = null;
-      }, 220);
-    };
-    window.dlQuickPickZip = function() {
-      const fid = _dlQuickFolderId;
-      closeDlQuickPick();
-      // Open full download modal pre-set to JPG
-      openFolderDlModal(fid);
-    };
-    window.dlQuickPickGallery = async function() {
-      const fid = _dlQuickFolderId;
-      closeDlQuickPick();
-      if (!fid) return;
-      // Direct gallery download — all models, "all-info" style
-      const models = sortModels(allModels.filter(m => m.folderId === fid && !m.soldOut));
-      if (!models.length) { showToast('No models to download', 'error'); return; }
-      // Temporarily set selectedIds to this folder's models
-      const prevSelected = new Set(selectedIds);
-      selectedIds = new Set(models.map(m => m.id));
-      try {
-        showToast(`📱 Downloading ${models.length} images...`, 'success');
-        await dlAsGallery('all');
-      } finally {
-        selectedIds = prevSelected;
-      }
-    };
 
     // ── Folder Download Modal State ──
     let dlFolderId = null;
@@ -6127,51 +6020,6 @@ service cloud.firestore {
         default:           return [...list].sort((a,b) => soldOutLast(a,b) || (Number(a.serial)||0)-(Number(b.serial)||0));
       }
     }
-    window.setSort = function(val) {
-      currentSort = val;
-      // Update label
-      const labels = { serial:'Serial #', 'code-asc':'Code A→Z', 'code-desc':'Code Z→A', 'date-new':'Newest', 'date-old':'Oldest', 'price-high':'Price ↓', 'price-low':'Price ↑' };
-      const lbl = document.getElementById('sort-label-text');
-      if (lbl) lbl.textContent = labels[val] || 'Sort';
-      // Highlight active option
-      document.querySelectorAll('.sort-opt').forEach(el => {
-        el.classList.toggle('bg-orange-50', el.id === 'sort-opt-' + val);
-        el.classList.toggle('text-[#e85d3a]', el.id === 'sort-opt-' + val);
-      });
-      const menu = document.getElementById('sort-dropdown-menu');
-      const arrow = document.getElementById('sort-dropdown-arrow');
-      if (menu) menu.classList.add('hidden');
-      if (arrow) arrow.style.transform = '';
-      applyFilters();
-    };
-    window.toggleSortDropdown = function() {
-      const menu = document.getElementById('sort-dropdown-menu');
-      const arrow = document.getElementById('sort-dropdown-arrow');
-      const isOpen = !menu.classList.contains('hidden');
-      if (isOpen) {
-        menu.classList.add('hidden');
-        if (arrow) arrow.style.transform = '';
-        _removeDropdownBackdrop('sort-bd');
-      } else {
-        menu.classList.remove('hidden');
-        if (arrow) arrow.style.transform = 'rotate(180deg)';
-        if (window.innerWidth < 640) _addDropdownBackdrop('sort-bd', () => {
-          menu.classList.add('hidden');
-          if (arrow) arrow.style.transform = '';
-          _removeDropdownBackdrop('sort-bd');
-        });
-      }
-    };
-    document.addEventListener('click', function(e) {
-      const wrap = document.getElementById('sort-dropdown-wrap');
-      if (wrap && !wrap.contains(e.target)) {
-        const menu = document.getElementById('sort-dropdown-menu');
-        const arrow = document.getElementById('sort-dropdown-arrow');
-        if (menu) menu.classList.add('hidden');
-        if (arrow) arrow.style.transform = '';
-      }
-    });
-
     // Parses a stored age tag like "6y_12y" or "3m_9m" into a numeric range in months
     // (so mixed-unit comparisons — e.g. "6m_2y" — work on one common scale).
     function parseAgeTagMonths(tag) {
@@ -7024,7 +6872,6 @@ service cloud.firestore {
         }, 500);
       }
     };
-    window.closeLoginModal = function() { hideLoginModal(); };
 
     // ── Age ranges (sonbola.shop-style: persistent editable rows, not chips) ──
     function parseAgeTagParts(tag) {
@@ -7515,27 +7362,6 @@ service cloud.firestore {
       const bd = document.getElementById(id);
       if (bd) bd.style.display = 'none';
     }
-
-    window.toggleDownloadDropdown = function() {
-      const menu=document.getElementById("download-dropdown-menu"); const arrow=document.getElementById("download-dropdown-arrow");
-      const isOpen=!menu.classList.contains("hidden");
-      if(isOpen){
-        menu.classList.add("hidden"); if(arrow) arrow.style.transform="";
-        _removeDropdownBackdrop('dl-bd');
-      } else {
-        menu.style.animation="none"; menu.classList.remove("hidden"); void menu.offsetWidth; menu.style.animation="dropdownIn 0.2s ease";
-        if(arrow) arrow.style.transform="rotate(180deg)";
-        if (window.innerWidth < 640) _addDropdownBackdrop('dl-bd', () => { window.closeDownloadDropdown(); _removeDropdownBackdrop('dl-bd'); });
-      }
-    };
-    window.closeDownloadDropdown = function() {
-      const menu=document.getElementById("download-dropdown-menu"); if(menu) menu.classList.add("hidden");
-      const arrow=document.getElementById("download-dropdown-arrow"); if(arrow) arrow.style.transform="";
-      _removeDropdownBackdrop('dl-bd');
-    };
-    document.addEventListener("click", function(e) {
-      const wrap=document.getElementById("download-dropdown-wrap"); if(wrap&&!wrap.contains(e.target)) window.closeDownloadDropdown();
-    });
 
     // ── Select All ──
     // "Visible models" = whatever renderGrid actually put on screen — the current folder's
@@ -9649,20 +9475,6 @@ service cloud.firestore {
       }
     };
 
-    // Toggle canViewDiscount for co_admin users
-    window.toggleCoAdminDiscount = async function(uid, currentValue) {
-      if (!window._fbUpdateManagedUser) return;
-      try {
-        const newValue = !currentValue;
-        await window._fbUpdateManagedUser(uid, { canViewDiscount: newValue });
-        window._appState.showToast(newValue ? 'Discount viewing enabled ✓' : 'Discount viewing disabled', 'success');
-        loadManagedUsers();
-      } catch(e) {
-        console.error(e);
-        window._appState.showToast('Error updating permission', 'error');
-      }
-    };
-
     window.adminEnableUser = async function(uid) {
       if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
         window._appState.showToast("You don't have permission to enable users", 'error');
@@ -10260,8 +10072,6 @@ service cloud.firestore {
             window._managedUserPerms = {};
             const _permKeys = ['canViewDiscount','canDownload','canAddModel','canEditModel','canDeleteModel','canShare'];
             _permKeys.forEach(k => { if (userData[k] !== undefined) window._managedUserPerms[k] = userData[k]; });
-            // Legacy backward compat
-            window._coAdminCanViewDiscount = window._managedUserPerms.canViewDiscount === true;
 
           } else {
             // 🚫 Not admin, not in managed_users → kick out
