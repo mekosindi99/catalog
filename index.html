@@ -9104,11 +9104,11 @@ service cloud.firestore {
     // ── Feature definitions (shared with modal) ──
     const _ADMIN_FEATURES = [
       { key: 'canViewDiscount', icon: '💸', label: 'Can view discount', desc: 'View the discount percentage on products',        defCoAdmin: false, defUser: false },
-      { key: 'canDownload',     icon: '📥', label: 'Download images', desc: 'Download high-quality product images',     defCoAdmin: true,  defUser: false },
+      { key: 'canDownload',     icon: '📥', label: 'Download images', desc: 'Download high-quality product images',     defCoAdmin: true,  defUser: true },
       { key: 'canAddModel',     icon: '➕', label: 'Add model', desc: 'Add new products to the catalog',      defCoAdmin: true,  defUser: false },
       { key: 'canEditModel',    icon: '✏️', label: 'Edit model', desc: 'Edit existing product data',     defCoAdmin: true,  defUser: false },
       { key: 'canDeleteModel',  icon: '🗑️', label: 'Delete model', desc: 'Delete products from the catalog',          defCoAdmin: true,  defUser: false },
-      { key: 'canShare',        icon: '🔗', label: 'Share catalog', desc: 'Share the catalog link for viewing',    defCoAdmin: true,  defUser: false },
+      { key: 'canShare',        icon: '🔗', label: 'Share catalog', desc: 'Share the catalog link for viewing',    defCoAdmin: true,  defUser: true },
     ];
 
     function renderManagedUsers(users) {
@@ -10527,25 +10527,19 @@ service cloud.firestore {
     }
     window._canViewDiscountUI = _canViewDiscount;
 
-    // Can download: admin always yes; co_admin default yes; regular user only if granted.
+    // Can download: admin, co_admin, and regular user all default to yes — only an
+    // explicit canDownload:false on the managed_users doc revokes it.
     function _canDownload() {
       if (_isAdminUser()) return true;
-      if (_isCoAdminUser()) {
-        const p = window._managedUserPerms || {};
-        return p.canDownload !== false; // default: true for co_admin
-      }
-      return (window._managedUserPerms || {}).canDownload === true;
+      return (window._managedUserPerms || {}).canDownload !== false;
     }
     window._canDownloadUI = _canDownload;
 
-    // Can share: admin always yes; co_admin default yes; regular user only if granted.
+    // Can share: admin, co_admin, and regular user all default to yes — only an
+    // explicit canShare:false on the managed_users doc revokes it.
     function _canShare() {
       if (_isAdminUser()) return true;
-      if (_isCoAdminUser()) {
-        const p = window._managedUserPerms || {};
-        return p.canShare !== false; // default: true for co_admin
-      }
-      return (window._managedUserPerms || {}).canShare === true;
+      return (window._managedUserPerms || {}).canShare !== false;
     }
     window._canShareUI = _canShare;
 
