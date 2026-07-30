@@ -1549,10 +1549,6 @@
           </svg>
         </button>
 
-        <!-- Hidden legacy buttons kept for JS compatibility -->
-        <button id="login-btn" onclick="showLoginModal()" style="display:none" class="hidden"></button>
-        <button id="admin-panel-btn" onclick="openAdminPanel()" style="display:none" class="hidden admin-only"></button>
-        <button id="logout-btn" onclick="doLogout()" style="display:none" class="hidden"></button>
       </div>
     </div>
   </header>
@@ -6803,23 +6799,6 @@ service cloud.firestore {
         if (el.classList.contains("home-only") && currentFolderId !== null) return;
         el.style.display = isAdmin ? "" : "none";
       });
-
-      const loginBtn      = document.getElementById("login-btn");
-      const logoutBtn     = document.getElementById("logout-btn");
-      const adminPanelBtn = document.getElementById("admin-panel-btn");
-
-      if (viewOnlyMode) {
-        if (loginBtn)      loginBtn.style.display      = "none";
-        if (logoutBtn)     logoutBtn.style.display     = "none";
-        if (adminPanelBtn) adminPanelBtn.style.display = "none";
-      } else {
-        // Sign In: hide when anyone is logged in
-        if (loginBtn)      loginBtn.style.display      = isLoggedIn ? "none" : "";
-        // Sign Out: show for ALL logged-in users (admin + co_admin + managed user)
-        if (logoutBtn)     logoutBtn.style.display     = isLoggedIn ? "" : "none";
-        // Admin Panel: ONLY super admin can open it — co_admin has no access
-        if (adminPanelBtn) adminPanelBtn.style.display = isAdmin ? "" : "none";
-      }
 
       // Sync side menu sheet
       if (window.syncSideMenuAuth) {
