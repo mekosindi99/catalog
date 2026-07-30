@@ -10237,8 +10237,11 @@ service cloud.firestore {
           window.loadDomainInfo().then(data => { if (typeof checkDomainExpiryWarning === 'function') checkDomainExpiryWarning(data); });
         }
 
-        // ── Check for missed notifications since last login (regular users only — not co_admin) ──
-        if (window._isManagedUser && resolvedRole !== "co_admin") {
+        // ── Check for missed notifications since last login (admin + regular users — not
+        // co_admin, since a co_admin is usually the one making the change and doesn't need
+        // to be told about their own edits; the anonymous public share view never reaches
+        // this code path at all, so it never sees this popup) ──
+        if (resolvedRole === "admin" || (window._isManagedUser && resolvedRole === "user")) {
           const _notifCheckUser = user;
           const _waitAndCheck = () => {
             if (modelsLoaded && foldersLoaded) {
