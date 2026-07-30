@@ -10285,6 +10285,11 @@ service cloud.firestore {
         S.currentUser = null;
         const gate = document.getElementById("login-gate");
         if (gate) gate.style.display = "flex";
+        // A successful login never resets the submit button (it just hides behind the gate,
+        // so nobody notices it's still "disabled / Signing in..."). That stale state was
+        // resurfacing here every time the gate reappeared after logout, leaving the button
+        // unclickable until a full app restart.
+        if (window._resetGateSubmit) window._resetGateSubmit();
         window._pendingFolderId = null;
         window._currentUserAllowedFolders = null;
         window._isManagedUser = false;
