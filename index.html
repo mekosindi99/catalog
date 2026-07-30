@@ -1853,7 +1853,11 @@
         // ── Smart identifier detection ──
         function gateIdentifierInput(inp) {
           const val = inp.value;
-          const isEmail = val.includes('@');
+          // Was `val.includes('@')` — before the '@' character exists yet, every keystroke
+          // fell into the phone-mode branch below and got stripped to digits-only, so typing
+          // an email letter by letter (rather than pasting the whole thing at once) never
+          // worked. Any non-digit character at all is enough to know it's not a phone number.
+          const isEmail = /[^0-9]/.test(val);
           const phoneIcon  = document.getElementById('gate-icon-phone');
           const emailIcon  = document.getElementById('gate-icon-email');
           const label      = document.getElementById('gate-id-label');
