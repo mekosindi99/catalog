@@ -5931,9 +5931,31 @@ service cloud.firestore {
       const hit = AGE_UNIT_I18N[(u || '').toLowerCase()];
       return (hit && hit[lang]) || u;
     }
+    // English pluralizes the unit word ("1 year" vs "5 years"); Arabic/Kurdish don't need that
+    // here (سنة/ساڵی stay the same regardless of the number in this kind of phrase).
+    function ageUnitWordPlural(u, n) {
+      const lang = window._psvLang || window._appLang || 'ar';
+      if (lang === 'en') {
+        const base = ageUnitWord(u);
+        return (Number(n) === 1) ? base : base + 's';
+      }
+      if (lang === 'ku') return u.toLowerCase() === 'm' ? 'مانگی' : 'ساڵی';
+      return ageUnitWord(u);
+    }
     function formatAgeTag(tag) {
       const m = tag.match(/^(\d+)([my])_(\d+)([my])$/i);
-      if (m) return `${m[1]} ${ageUnitWord(m[2])} – ${m[3]} ${ageUnitWord(m[4])}`;
+      if (m) {
+        const lang = window._psvLang || window._appLang || 'ar';
+        const n1 = m[1], n2 = m[3];
+        const w1 = ageUnitWordPlural(m[2], n1), w2 = ageUnitWordPlural(m[4], n2);
+        // Matches sonbola.shop's own phrasing per language, e.g. Arabic "من 1 سنة الى 5 سنة"
+        // instead of a bare number/unit pair joined by a dash — reads correctly in each
+        // language's natural word order instead of relying on a symbol ("–") that has no
+        // inherent direction and gets mis-ordered when mixed with RTL script.
+        if (lang === 'ku') return `له ${n1} ${w1} بو ${n2} ${w2}`;
+        if (lang === 'en') return `${n1} ${w1} to ${n2} ${w2}`;
+        return `من ${n1} ${w1} الى ${n2} ${w2}`;
+      }
       const l = tag.match(/^(\d+)_(\d+)$/);
       if (l) return `${l[1]} – ${l[2]}`;
       // Unrecognized shape — this string gets inserted straight into card HTML by callers
@@ -6038,7 +6060,7 @@ service cloud.firestore {
           ${discountBadgeHTML}
           <div class="${overlayClass} absolute inset-0 pointer-events-none">
             ${(m.ageGroup || m.gender || m.season) ? `<div class="absolute top-2 right-2 flex flex-col items-end gap-1">
-              ${m.ageGroup ? cleanAgeStr(m.ageGroup).split(',').map(a=>a.trim()).filter(Boolean).map(a=>`<span style="background:${ageColor};color:${ageTxt};font-size:${ageFontSizeCss};font-weight:800;padding:var(--badge-pad-v) var(--badge-pad-h);border-radius:var(--badge-radius);border:var(--badge-border-width) solid var(--badge-border-color);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);direction:ltr;">${formatAgeTag(a)}</span>`).join('') : ''}
+              ${m.ageGroup ? cleanAgeStr(m.ageGroup).split(',').map(a=>a.trim()).filter(Boolean).map(a=>`<span style="background:${ageColor};color:${ageTxt};font-size:${ageFontSizeCss};font-weight:800;padding:var(--badge-pad-v) var(--badge-pad-h);border-radius:var(--badge-radius);border:var(--badge-border-width) solid var(--badge-border-color);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);direction:${(window._psvLang || window._appLang || 'ar') === 'en' ? 'ltr' : 'rtl'};">${formatAgeTag(a)}</span>`).join('') : ''}
               ${m.gender ? `<span style="background:#fce7f3;color:#be185d;font-size:${ageFontSizeCss};font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);">${escapeHtml(translateCatalogValue(m.gender))}</span>` : ''}
               ${m.season ? `<span style="background:#e0f2fe;color:#0369a1;font-size:${ageFontSizeCss};font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);">${escapeHtml(translateCatalogValue(m.season))}</span>` : ''}
             </div>` : ''}
