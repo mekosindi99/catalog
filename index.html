@@ -7611,15 +7611,12 @@ service cloud.firestore {
       const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
       if (!models.length) return;
 
-      // Inside the Android app: unchanged, real native multi-image share sheet.
-      if (window.AndroidDownloader && typeof window.AndroidDownloader.shareImages === 'function') {
-        return window.shareSelectedImages();
-      }
-
       // Building each shared image (fetch + canvas badge draw) for several selected photos
       // takes a couple of seconds with no visual change until the OS share sheet finally pops
       // up — feels stuck/broken. Show a spinner on the button itself right away instead of
-      // relying only on the easy-to-miss status text in the bar.
+      // relying only on the easy-to-miss status text in the bar. This runs for the Android
+      // bridge path too — it used to return early above the spinner, so the native app (the
+      // slowest path, since it also base64-encodes every image) showed no feedback at all.
       const btn = document.getElementById('copy-selected-btn');
       const icon = document.getElementById('copy-selected-icon');
       const spinner = document.getElementById('copy-selected-spinner');
@@ -7629,6 +7626,11 @@ service cloud.firestore {
       if (spinner) spinner.classList.remove('hidden');
       if (label) label.textContent = 'Preparing...';
       try {
+        // Inside the Android app: real native multi-image share sheet.
+        if (window.AndroidDownloader && typeof window.AndroidDownloader.shareImages === 'function') {
+          return await window.shareSelectedImages();
+        }
+
         if (await window.copyImageToClipboard(models)) return;
 
         // Clipboard API unavailable/blocked — try the Web Share API (real file sharing on the
@@ -7709,6 +7711,24 @@ service cloud.firestore {
       const pad = (n, len) => String(n).padStart(len || 2, '0');
       const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${pad(now.getMilliseconds(), 3)}`;
       return `${prefix}_${stamp}.${ext}`;
+    }
+    // Runs an async task over a list with a cap on how many run at once. Used by the share
+    // paths, which previously awaited each image in sequence (total wait = sum of every
+    // image's fetch+render time). Firing all of them at once instead would be fastest but
+    // risks exhausting memory on a phone when a large batch is selected, since each task
+    // decodes a full-resolution bitmap onto its own canvas — so keep a modest cap.
+    async function mapWithConcurrency(items, limit, taskFn) {
+      const results = new Array(items.length);
+      let next = 0;
+      const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
+        while (true) {
+          const i = next++;
+          if (i >= items.length) return;
+          results[i] = await taskFn(items[i], i);
+        }
+      });
+      await Promise.all(workers);
+      return results;
     }
     function roundRect(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2,Math.max(0,r));ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 
@@ -8171,14 +8191,18 @@ service cloud.firestore {
         return window.shareSelectedImagesWeb(models);
       }
 
-      const images = [];
-      for (let i = 0; i < models.length; i++) {
-        const m = models[i];
+      // Each image is an independent network fetch + canvas draw + base64 encode. Doing them
+      // one at a time (await inside a for loop) made the total wait the SUM of every image's
+      // time, which is why the native share sheet took so long to appear with several photos
+      // selected. Running them concurrently lets the browser fetch all the Cloudinary images
+      // in parallel, so the wait is roughly the slowest single image instead of the sum.
+      // renderBadgedImageBlob is untouched — identical output, same code path as ZIP/Gallery.
+      const prepared = await mapWithConcurrency(models, 4, async (m, i) => {
         try {
           // Same code/price/age/discount badges as ZIP/Gallery export, so shared images carry
           // the same info a customer would see anywhere else instead of being a bare photo.
           const blob = await renderBadgedImageBlob(m, 'all');
-          if (!blob) continue;
+          if (!blob) return null;
           const base64 = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -8190,9 +8214,10 @@ service cloud.firestore {
             reader.readAsDataURL(blob);
           });
           const seq = String(i + 1).padStart(2, '0');
-          images.push({ base64, filename: `${seq}_${m.modelCode || 'model'}.jpg` });
-        } catch (e) { console.warn('share prep error', e); }
-      }
+          return { base64, filename: `${seq}_${m.modelCode || 'model'}.jpg` };
+        } catch (e) { console.warn('share prep error', e); return null; }
+      });
+      const images = prepared.filter(Boolean);
 
       if (!images.length) return;
       window.AndroidDownloader.shareImages(JSON.stringify(images));
@@ -8221,8 +8246,8 @@ service cloud.firestore {
         // origin), so total wait drops to roughly the slowest single image instead of the sum
         // of all of them. renderBadgedImageBlob itself is untouched — same output, same quality,
         // same code path every other download/export feature (ZIP/Gallery/PDF) still uses.
-        const blobs = await Promise.all(
-          models.map(m => renderBadgedImageBlob(m, 'all').catch(() => null))
+        const blobs = await mapWithConcurrency(models, 4,
+          m => renderBadgedImageBlob(m, 'all').catch(() => null)
         );
         const files = [];
         blobs.forEach((blob, i) => {
