@@ -6722,7 +6722,7 @@ service cloud.firestore {
         const pills = [];
         if (m.ageGroup) {
           cleanAgeStr(m.ageGroup).split(',').map(a => a.trim()).filter(Boolean).forEach(a => {
-            pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.76rem;font-weight:700;padding:5px 13px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">👤 ${escapeHtml(formatAgeTag(a))}</span>`);
+            pills.push(`<span style="background:#e0f2fe;color:#0369a1;font-size:0.76rem;font-weight:700;padding:5px 13px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,0.06);display:inline-flex;align-items:center;gap:4px;direction:${currentUiLang() === 'en' ? 'ltr' : 'rtl'};unicode-bidi:isolate;">👤 ${escapeHtml(formatAgeTag(a))}</span>`);
           });
         }
         if (m.gender) pills.push(`<span style="background:#fce7f3;color:#be185d;font-size:0.76rem;font-weight:700;padding:5px 13px;border-radius:999px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">${escapeHtml(translateCatalogValue(m.gender))}</span>`);
