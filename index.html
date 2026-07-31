@@ -9554,6 +9554,14 @@ service cloud.firestore {
     window._fbConfig = firebaseConfig;
     window._db = db;
 
+    // Apply branding (logo + app name) immediately at boot, before login even happens —
+    // fetchAppSettings/applyAppBrandingToUI (defined further down, but function declarations
+    // are hoisted within this module scope) were previously ONLY ever called as a side effect
+    // of an admin opening/saving the App Settings panel, so the login screen's logo stayed on
+    // its hardcoded fallback icon for every visitor until an admin happened to touch that panel
+    // in the same browser session.
+    fetchAppSettings().then(applyAppBrandingToUI).catch(() => {});
+
     // ── Save new managed user to Firestore ──
     window._fbSaveManagedUser = async function(userData) {
       try {
