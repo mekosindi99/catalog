@@ -2441,6 +2441,12 @@ service cloud.firestore {
         <p class="font-extrabold text-gray-800">🌦️ Iraq Weather</p>
         <button onclick="closeWeatherView()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">✕</button>
       </div>
+      <div class="flex items-center gap-1 px-4 pt-3 pb-1 flex-wrap shrink-0">
+        <button type="button" onclick="setWeatherSort('default')" id="weather-sort-default" class="weather-sort-btn px-2.5 py-1 text-[10px] font-bold rounded-md">Default</button>
+        <button type="button" onclick="setWeatherSort('hottest')" id="weather-sort-hottest" class="weather-sort-btn px-2.5 py-1 text-[10px] font-bold rounded-md">🔥 Hottest first</button>
+        <button type="button" onclick="setWeatherSort('coldest')" id="weather-sort-coldest" class="weather-sort-btn px-2.5 py-1 text-[10px] font-bold rounded-md">❄️ Coldest first</button>
+        <button type="button" onclick="setWeatherSort('condition')" id="weather-sort-condition" class="weather-sort-btn px-2.5 py-1 text-[10px] font-bold rounded-md">☀️ By condition</button>
+      </div>
       <div id="weather-grid" class="overflow-y-auto flex-1 min-h-0 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
     </div>
   </div>
@@ -11966,34 +11972,78 @@ service cloud.firestore {
             return { city, daily: data.daily };
           } catch (e) { return { city, daily: null }; }
         }));
-        window._weatherResults = results; // cached so tapping a city doesn't refetch
-        if (grid) {
-          // Each city is just a name + current temp — tapping it pops open a dedicated,
-          // full-screen-friendly detail modal (more reliable than an inline expand, which
-          // didn't reflow cleanly inside the 2/3-column grid).
-          grid.innerHTML = results.map(({ city, daily }, idx) => {
-            if (!daily) {
-              return `<div class="bg-white rounded-2xl border border-gray-100 p-4"><p class="text-sm font-bold text-gray-700">${escapeHtml(city.nameAr)} (${city.name})</p><p class="text-xs text-gray-400 mt-2">Couldn't load forecast</p></div>`;
-            }
-            const nowIcon = _weatherIcon(daily.weathercode[0]);
-            const nowHi = Math.round(daily.temperature_2m_max[0]);
-            const nowLo = Math.round(daily.temperature_2m_min[0]);
-            return `<button type="button" onclick="openWeatherCityDetail(${idx})" class="bg-white rounded-2xl border border-gray-100 hover:border-[#e85d3a]/40 hover:shadow-md transition-all p-4 text-left w-full">
-              <div class="flex items-center justify-between">
-                <p class="text-sm font-bold text-gray-800">${escapeHtml(city.nameAr)} <span class="text-gray-400 font-normal">(${city.name})</span></p>
-                <span class="flex items-center gap-2 shrink-0">
-                  <span class="text-base">${nowIcon}</span>
-                  <span class="text-xs font-bold text-gray-600">${nowHi}°/${nowLo}°</span>
-                  <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-                </span>
-              </div>
-            </button>`;
-          }).join('');
-        }
+        window._weatherResults = results; // cached so tapping a city / re-sorting doesn't refetch
+        window.setWeatherSort(_weatherSortMode);
       } catch (e) {
         if (grid) grid.innerHTML = '<p class="text-center text-xs text-red-400 py-10 col-span-full">Could not load weather data</p>';
       }
     };
+
+    // WMO weather codes (what Open-Meteo returns) grouped into a fair-weather-to-severe
+    // ordering — the order a meteorologist would naturally rank "best to worst" conditions.
+    function _weatherConditionRank(code) {
+      if (code === 0) return 0;                          // clear
+      if (code >= 1 && code <= 3) return 1;               // partly cloudy → overcast
+      if (code === 45 || code === 48) return 2;           // fog
+      if (code >= 51 && code <= 57) return 3;             // drizzle
+      if (code >= 61 && code <= 67) return 4;             // rain
+      if (code >= 80 && code <= 82) return 5;             // rain showers
+      if (code >= 71 && code <= 77) return 6;             // snow
+      if (code >= 85 && code <= 86) return 7;             // snow showers
+      if (code >= 95) return 8;                           // thunderstorm
+      return 9;
+    }
+
+    let _weatherSortMode = 'default';
+    window.setWeatherSort = function(mode) {
+      _weatherSortMode = mode;
+      document.querySelectorAll('.weather-sort-btn').forEach(b => {
+        const active = b.id === 'weather-sort-' + mode;
+        b.style.background = active ? '#e85d3a' : '';
+        b.style.color = active ? '#fff' : '#6b7280';
+      });
+      _renderWeatherGrid();
+    };
+
+    function _renderWeatherGrid() {
+      const grid = document.getElementById('weather-grid');
+      const results = window._weatherResults || [];
+      if (!grid || !results.length) return;
+      // Keep each entry's ORIGINAL index so tapping a card after sorting still opens the
+      // right city's detail popup (openWeatherCityDetail indexes into the unsorted array).
+      let ordered = results.map((r, origIdx) => ({ ...r, origIdx }));
+      if (_weatherSortMode === 'hottest') {
+        ordered = ordered.filter(r => r.daily).sort((a, b) => b.daily.temperature_2m_max[0] - a.daily.temperature_2m_max[0])
+          .concat(ordered.filter(r => !r.daily));
+      } else if (_weatherSortMode === 'coldest') {
+        ordered = ordered.filter(r => r.daily).sort((a, b) => a.daily.temperature_2m_min[0] - b.daily.temperature_2m_min[0])
+          .concat(ordered.filter(r => !r.daily));
+      } else if (_weatherSortMode === 'condition') {
+        ordered = ordered.filter(r => r.daily).sort((a, b) => _weatherConditionRank(a.daily.weathercode[0]) - _weatherConditionRank(b.daily.weathercode[0]))
+          .concat(ordered.filter(r => !r.daily));
+      }
+      // Each city is just a name + current temp — tapping it pops open a dedicated,
+      // full-screen-friendly detail modal (more reliable than an inline expand, which
+      // didn't reflow cleanly inside the 2/3-column grid).
+      grid.innerHTML = ordered.map(({ city, daily, origIdx }) => {
+        if (!daily) {
+          return `<div class="bg-white rounded-2xl border border-gray-100 p-4"><p class="text-sm font-bold text-gray-700">${escapeHtml(city.nameAr)} (${city.name})</p><p class="text-xs text-gray-400 mt-2">Couldn't load forecast</p></div>`;
+        }
+        const nowIcon = _weatherIcon(daily.weathercode[0]);
+        const nowHi = Math.round(daily.temperature_2m_max[0]);
+        const nowLo = Math.round(daily.temperature_2m_min[0]);
+        return `<button type="button" onclick="openWeatherCityDetail(${origIdx})" class="bg-white rounded-2xl border border-gray-100 hover:border-[#e85d3a]/40 hover:shadow-md transition-all p-4 text-left w-full">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-bold text-gray-800">${escapeHtml(city.nameAr)} <span class="text-gray-400 font-normal">(${city.name})</span></p>
+            <span class="flex items-center gap-2 shrink-0">
+              <span class="text-base">${nowIcon}</span>
+              <span class="text-xs font-bold text-gray-600">${nowHi}°/${nowLo}°</span>
+              <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </button>`;
+      }).join('');
+    }
 
     // Dedicated popup for one city's full forecast — sits above the main weather grid modal.
     window.openWeatherCityDetail = function(idx) {
