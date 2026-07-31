@@ -1714,16 +1714,70 @@
       <div id="sheet-admin-section" class="hidden">
         <p class="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest" data-i18n="adminSectionLabel">Admin</p>
 
-        <button onclick="closeSideMenu(); setTimeout(openAdminPanel, 300);"
-          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
+        <p class="px-3 py-1 text-[10px] font-black text-gray-300 uppercase tracking-widest">Admin Panel</p>
+
+        <button onclick="closeSideMenu(); setTimeout(function(){ openAdminPanel(); switchAdminTab('overview'); }, 300);"
+          class="sheet-admin-tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
+          <span class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+            </svg>
+          </span>
+          <span data-i18n="adminOverviewLabel">Overview</span>
+        </button>
+
+        <button onclick="closeSideMenu(); setTimeout(function(){ openAdminPanel(); switchAdminTab('folders'); }, 300);"
+          class="sheet-admin-tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
+          <span class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+            </svg>
+          </span>
+          <span data-i18n="adminFoldersLabel">Manage Folders</span>
+        </button>
+
+        <button onclick="closeSideMenu(); setTimeout(function(){ openAdminPanel(); switchAdminTab('users'); }, 300);"
+          class="sheet-admin-tab-btn super-admin-sheet-only w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
+          <span class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m5-4.13a4 4 0 100-8 4 4 0 000 8zm-6 8v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
+            </svg>
+          </span>
+          <span data-i18n="adminUsersLabel">Users</span>
+        </button>
+
+        <button onclick="closeSideMenu(); setTimeout(function(){ openAdminPanel(); switchAdminTab('sessions'); }, 300);"
+          class="sheet-admin-tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
+          <span class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </span>
+          <span data-i18n="adminSessionsLabel">Sessions</span>
+        </button>
+
+        <button onclick="closeSideMenu(); setTimeout(function(){ openAdminPanel(); switchAdminTab('stats'); }, 300);"
+          class="sheet-admin-tab-btn super-admin-sheet-only w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
+          <span class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l7 7-7 7zM4 5v14"/>
+            </svg>
+          </span>
+          <span data-i18n="adminStatsLabel">Statistics</span>
+        </button>
+
+        <button onclick="closeSideMenu(); setTimeout(function(){ openAdminPanel(); switchAdminTab('appsettings'); }, 300);"
+          class="sheet-admin-tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
           <span class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center text-white shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </span>
-          <span data-i18n="adminPanelLabel">Admin Panel</span>
+          <span data-i18n="adminSettingsLabel">App Settings</span>
         </button>
+
+        <div class="mx-3 my-2 h-px bg-gray-100"></div>
 
         <button id="sheet-add-folder" onclick="openAddFolderModal();closeSideMenu();"
           class="home-only w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
@@ -3587,6 +3641,12 @@ service cloud.firestore {
         toggleDetails: 'إظهار / إخفاء التفاصيل',
         adminSectionLabel: 'الأدمن',
         adminPanelLabel: 'لوحة الأدمن',
+        adminOverviewLabel: 'نظرة عامة',
+        adminFoldersLabel: 'إدارة الفولدرات',
+        adminUsersLabel: 'المستخدمين',
+        adminSessionsLabel: 'الجلسات',
+        adminStatsLabel: 'الإحصائيات',
+        adminSettingsLabel: 'إعدادات التطبيق',
         accountLabel: 'الحساب',
         signOut: 'تسجيل الخروج',
         newUpdates: 'تحديثات جديدة',
@@ -3724,6 +3784,12 @@ service cloud.firestore {
         toggleDetails: 'پیشاندان / شاردنەوەی وردەکاری',
         adminSectionLabel: 'ئەدمین',
         adminPanelLabel: 'پانێڵی ئەدمین',
+        adminOverviewLabel: 'گشتی',
+        adminFoldersLabel: 'بەڕێوەبردنی فۆڵدەرەکان',
+        adminUsersLabel: 'بەکارهێنەران',
+        adminSessionsLabel: 'دانیشتنەکان',
+        adminStatsLabel: 'ئامار',
+        adminSettingsLabel: 'ڕێکخستنی ئەپ',
         accountLabel: 'هەژمار',
         signOut: 'چوونەدەرەوە',
         newUpdates: 'نوێکارییەکانی نوێ',
@@ -3861,6 +3927,12 @@ service cloud.firestore {
         toggleDetails: 'Show / Hide Details',
         adminSectionLabel: 'Admin',
         adminPanelLabel: 'Admin Panel',
+        adminOverviewLabel: 'Overview',
+        adminFoldersLabel: 'Manage Folders',
+        adminUsersLabel: 'Users',
+        adminSessionsLabel: 'Sessions',
+        adminStatsLabel: 'Statistics',
+        adminSettingsLabel: 'App Settings',
         accountLabel: 'Account',
         signOut: 'Sign Out',
         newUpdates: 'New Updates',
@@ -7334,10 +7406,12 @@ service cloud.firestore {
       document.querySelectorAll(".super-admin-sheet-only").forEach(el => {
         el.style.display = (role === "admin") ? "" : "none";
       });
-      // co_admin: hide Admin Panel button, Global Discount, Font Sizes, New Folder in side menu
-      // These are home-only folder-management items that co_admin cannot use
-      const sheetAdminPanel = document.querySelector("#sheet-admin-section button[onclick*='openAdminPanel']");
-      if (sheetAdminPanel) sheetAdminPanel.style.display = (role === "admin") ? "" : "none";
+      // co_admin: hide the Admin Panel shortcuts (Overview/Folders/Users/Sessions/Statistics/
+      // App Settings), Global Discount, Font Sizes, New Folder in side menu — Admin Panel as a
+      // whole is super-admin only (openAdminPanel() itself also refuses non-admins).
+      document.querySelectorAll(".sheet-admin-tab-btn").forEach(el => {
+        el.style.display = (role === "admin") ? "" : "none";
+      });
       const sheetGlobalDiscount = document.querySelector("#sheet-admin-section button[onclick*='openGlobalDiscountModal']");
       if (sheetGlobalDiscount) sheetGlobalDiscount.style.display = (role === "admin") ? "" : "none";
       const sheetFontSizes = document.querySelector("#sheet-admin-section button[onclick*='openGlobalFontSizesModal']");
@@ -8288,8 +8362,10 @@ service cloud.firestore {
         </button>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex border-b border-gray-100 px-4 bg-gray-50/50 overflow-x-auto flex-shrink-0">
+      <!-- Tabs — hidden now that all sections have their own direct entry in the side menu;
+           kept in the DOM (not deleted) since switchAdminTab()/openAdminPanel() still toggle
+           these same button/content ids to control which panel body is visible. -->
+      <div class="hidden flex border-b border-gray-100 px-4 bg-gray-50/50 overflow-x-auto flex-shrink-0">
         <button onclick="switchAdminTab('overview')" id="tab-overview" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-[#e85d3a] text-[#e85d3a]">Overview</button>
         <button onclick="switchAdminTab('folders')" id="tab-folders" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-transparent text-gray-400 hover:text-gray-700">Folders</button>
         <button onclick="switchAdminTab('users')" id="tab-users" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-transparent text-gray-400 hover:text-gray-700">👤 Users</button>
@@ -8870,6 +8946,8 @@ service cloud.firestore {
       const isSuperAdmin = !!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI());
       const usersTabBtn = document.getElementById('tab-users');
       if (usersTabBtn) usersTabBtn.style.display = isSuperAdmin ? '' : 'none';
+      const statsTabBtn = document.getElementById('tab-stats');
+      if (statsTabBtn) statsTabBtn.style.display = isSuperAdmin ? '' : 'none';
       switchAdminTab('overview');
       renderAdminOverview();
     };
