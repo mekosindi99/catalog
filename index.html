@@ -7660,6 +7660,10 @@ service cloud.firestore {
       const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${pad(now.getMilliseconds(), 3)}`;
       return `${prefix}_${stamp}.${ext}`;
     }
+    // Exposed on window — the Statistics tab's export functions live in a later, separate
+    // <script> tag (this app is split across several classic script blocks), where a plain
+    // function declaration like this one isn't in scope.
+    window.buildDownloadFilename = buildDownloadFilename;
     // Runs an async task over a list with a cap on how many run at once. Used by the share
     // paths, which previously awaited each image in sequence (total wait = sum of every
     // image's fetch+render time). Firing all of them at once instead would be fastest but
@@ -9419,7 +9423,7 @@ service cloud.firestore {
         if (y > 280) { doc.addPage(); y = 20; }
       });
 
-      const pdfName = buildDownloadFilename('stats', 'pdf');
+      const pdfName = window.buildDownloadFilename('stats', 'pdf');
       const saved = await window.saveBlobToDevice(doc.output('blob'), pdfName, false);
       if (!saved) doc.save(pdfName);
       showToast('Statistics PDF downloaded ✓', 'success');
@@ -9457,7 +9461,7 @@ service cloud.firestore {
       const wb = window.XLSX.utils.book_new();
       const ws = window.XLSX.utils.json_to_sheet(rows);
       window.XLSX.utils.book_append_sheet(wb, ws, 'Events');
-      const xlsxName = buildDownloadFilename('stats', 'xlsx');
+      const xlsxName = window.buildDownloadFilename('stats', 'xlsx');
       window.XLSX.writeFile(wb, xlsxName);
       showToast('Statistics Excel file downloaded ✓', 'success');
     };
