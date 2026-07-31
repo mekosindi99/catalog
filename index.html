@@ -9553,16 +9553,81 @@ service cloud.firestore {
           Role: _statsRoleLabel(e.role),
           Device: e.device || '',
           City: e.city || '',
-          Region: e.region || '',
+          Governorate: e.governorate || e.region || '',
           Country: e.country || '',
           IP: e.ip || '',
           VisitorId: e.visitorId || '',
           Date: ms ? new Date(ms).toLocaleString() : '',
         };
       });
+
+      // ── Summary sheet: totals so the admin doesn't have to scroll/count the raw rows
+      // themselves — "how many people viewed model X", "which governorate", etc. ──
+      const countBy = (list, key) => list.reduce((acc, e) => { const k = e[key]; if (k) acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+      const downloads = events.filter(e => e.type === 'download');
+      const shares = events.filter(e => e.type === 'share');
+      const modelViews = events.filter(e => e.type === 'model_view');
+      const folderViews = events.filter(e => e.type === 'folder_view');
+      const visitorIds = new Set(events.map(e => e.visitorId).filter(Boolean));
+
+      // Per-model combined breakdown (views + downloads + shares in one row per model).
+      const modelIds = new Set([...modelViews, ...downloads, ...shares].map(e => e.modelId).filter(Boolean));
+      const perModel = [...modelIds].map(id => {
+        const m = (S.allModels || []).find(x => x.id === id);
+        const f = m ? (S.allFolders || []).find(x => x.id === m.folderId) : null;
+        const views = modelViews.filter(e => e.modelId === id).length;
+        const dl = downloads.filter(e => e.modelId === id).length;
+        const sh = shares.filter(e => e.modelId === id).length;
+        return { ModelCode: m ? m.modelCode : `(deleted ${id})`, Folder: f ? f.name : '', Viewed: views, Downloaded: dl, Shared: sh, Total: views + dl + sh };
+      }).sort((a, b) => b.Total - a.Total);
+
+      const folderIds = new Set(folderViews.map(e => e.folderId).filter(Boolean));
+      const perFolder = [...folderIds].map(id => {
+        const f = (S.allFolders || []).find(x => x.id === id);
+        return { Folder: f ? f.name : `(deleted ${id})`, Opened: folderViews.filter(e => e.folderId === id).length };
+      }).sort((a, b) => b.Opened - a.Opened);
+
+      const roleCounts = countBy(events.map(e => ({ ...e, _r: _statsRoleLabel(e.role) })), '_r');
+      const govCounts = countBy(events.map(e => ({ ...e, _g: e.governorate || e.region || e.country || 'Unknown' })), '_g');
+      const deviceCounts = countBy(events, 'device');
+
+      const summaryAoA = [
+        ['SONBOLA CATALOG — STATISTICS SUMMARY'],
+        [`Range: ${_statsRangeDays === 'all' ? 'All time' : 'Last ' + _statsRangeDays + ' days'}`, `Generated: ${new Date().toLocaleString()}`],
+        [],
+        ['TOTALS'],
+        ['Downloads', downloads.length],
+        ['Shares', shares.length],
+        ['Folder Opens', folderViews.length],
+        ['Image Views', modelViews.length],
+        ['Unique Visitors', visitorIds.size],
+        [],
+        ['MODELS — Viewed / Downloaded / Shared / Total'],
+        ['Model Code', 'Folder', 'Viewed', 'Downloaded', 'Shared', 'Total'],
+        ...perModel.map(r => [r.ModelCode, r.Folder, r.Viewed, r.Downloaded, r.Shared, r.Total]),
+        [],
+        ['FOLDERS — Times Opened'],
+        ['Folder', 'Opened'],
+        ...perFolder.map(r => [r.Folder, r.Opened]),
+        [],
+        ['BY ROLE'],
+        ['Role', 'Count'],
+        ...Object.entries(roleCounts).sort((a, b) => b[1] - a[1]),
+        [],
+        ['BY GOVERNORATE / REGION'],
+        ['Region', 'Count'],
+        ...Object.entries(govCounts).sort((a, b) => b[1] - a[1]),
+        [],
+        ['BY DEVICE'],
+        ['Device', 'Count'],
+        ...Object.entries(deviceCounts).sort((a, b) => b[1] - a[1]),
+      ];
+
       const wb = window.XLSX.utils.book_new();
-      const ws = window.XLSX.utils.json_to_sheet(rows);
-      window.XLSX.utils.book_append_sheet(wb, ws, 'Events');
+      const summaryWs = window.XLSX.utils.aoa_to_sheet(summaryAoA);
+      window.XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+      const eventsWs = window.XLSX.utils.json_to_sheet(rows);
+      window.XLSX.utils.book_append_sheet(wb, eventsWs, 'Events');
       const xlsxName = window.buildDownloadFilename('stats', 'xlsx');
       window.XLSX.writeFile(wb, xlsxName);
       showToast('Statistics Excel file downloaded ✓', 'success');
