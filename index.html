@@ -3560,6 +3560,7 @@ service cloud.firestore {
         noneOption: '— بدون —',
         excludeFromDiscount: 'استثناء من الخصم',
         excludeFromDiscountDesc: 'ما ينطبق عليه أي خصم (فولدر أو عام)',
+        excludedBadge: 'غير مشمولة',
         cancel: 'إلغاء',
         save: 'حفظ',
         deleteModel: 'حذف الموديل',
@@ -3696,6 +3697,7 @@ service cloud.firestore {
         noneOption: '— هیچ —',
         excludeFromDiscount: 'دەرکردن لە داشکاندن',
         excludeFromDiscountDesc: 'هیچ داشکاندنێک ناخرێتە سەری (فۆڵدەر یان گشتی)',
+        excludedBadge: 'بێ داشکاندن',
         cancel: 'پاشگەزبوونەوە',
         save: 'پاشەکەوتکردن',
         deleteModel: 'سڕینەوەی مۆدێل',
@@ -3832,6 +3834,7 @@ service cloud.firestore {
         noneOption: '— None —',
         excludeFromDiscount: 'Exclude from discount',
         excludeFromDiscountDesc: 'No discount applies to this (folder-wide or global)',
+        excludedBadge: 'Excluded',
         cancel: 'Cancel',
         save: 'Save',
         deleteModel: 'Delete Model',
@@ -5944,10 +5947,14 @@ service cloud.firestore {
       const isPendingDelete = !!m.pendingDelete;
       const isAdminViewing = window._currentUserRole === "admin";
       const isSoldOut = !!m.soldOut;
+      // Shown to every viewer (admin, co_admin, regular user, and the anonymous public-share
+      // visitor — this same cardHTML() is reused there), translated to whichever language is
+      // active for that specific viewer.
+      const _excludedLabel = (APP_I18N[currentUiLang()] || APP_I18N.ar).excludedBadge || 'Excluded';
       const discountBadgeHTML = showDiscount
         ? `<div class="discount-badge">${discountPct}%</div>`
-        : (m.excludeFromDiscount && isAdminViewing
-            ? `<div class="discount-badge" style="background:rgba(107,114,128,0.85);box-shadow:none;font-size:0.6rem;padding:2px 6px;" title="Excluded from discount">🚫 Excluded</div>`
+        : (m.excludeFromDiscount
+            ? `<div class="discount-badge" style="background:rgba(107,114,128,0.85);box-shadow:none;font-size:0.6rem;padding:2px 6px;" title="${_excludedLabel}">🚫 ${_excludedLabel}</div>`
             : '');
       const priceHTML = showDiscount
         ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
