@@ -8852,11 +8852,15 @@ service cloud.firestore {
               <span class="text-xs font-semibold text-gray-600">Regular User</span>
             </label>
 
-            <div class="flex items-center gap-3 pt-1">
+            <div class="flex items-center gap-3 pt-1 flex-wrap">
               <button onclick="saveWeatherSettings()"
                 class="h-10 px-4 rounded-xl bg-[#1a1a2e] text-white text-xs font-bold hover:bg-[#2d2d4e] transition-colors flex items-center gap-1.5 shrink-0">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                 Save Weather Settings
+              </button>
+              <button onclick="openWeatherView()"
+                class="h-10 px-4 rounded-xl bg-sky-50 border border-sky-200 text-sky-600 text-xs font-bold hover:bg-sky-100 transition-colors flex items-center gap-1.5 shrink-0">
+                🌦️ View Weather Now
               </button>
               <span id="weather-settings-save-status" class="text-xs font-bold"></span>
             </div>
