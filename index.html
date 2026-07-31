@@ -1306,6 +1306,17 @@
     // favicon, PWA install icon, the header logo, and the login page logo.
     window.FOLDER_ICON_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='tab' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%234FB3E8'/%3E%3Cstop offset='1' stop-color='%232E86C1'/%3E%3C/linearGradient%3E%3ClinearGradient id='body' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%237FD1F5'/%3E%3Cstop offset='1' stop-color='%232E9FE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='18' fill='%23ffffff'/%3E%3Cpath d='M12 34V26Q12 16 22 16H40L50 26H78Q88 26 88 34Z' fill='url(%23tab)'/%3E%3Crect x='12' y='34' width='76' height='50' rx='10' fill='url(%23body)'/%3E%3Cpath d='M50 47v20m0 0l-11-11m11 11l11-11' stroke='%231B6FA8' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E";
 
+    // A separate "maskable" variant, edge-to-edge with no rounded corners and the folder
+    // shrunk into the inner safe zone (same scale-down the native Android adaptive-icon
+    // foreground already uses). Needed because a single icon marked "any maskable" gets
+    // cropped/padded by Android's adaptive-icon mask — and since our folder artwork doesn't
+    // fill the full square, the OS fills the padding with the manifest's theme_color (our
+    // brand orange), which is exactly the unwanted "orange folder" look before install.
+    // Splitting the purposes means "any" is used as-is (no masking) and this one is only
+    // used where the OS applies its own background/mask, so it's designed for that from
+    // the start instead of getting an unintended color fill.
+    window.FOLDER_ICON_MASKABLE_DATA_URI = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='tab2' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%234FB3E8'/%3E%3Cstop offset='1' stop-color='%232E86C1'/%3E%3C/linearGradient%3E%3ClinearGradient id='body2' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%237FD1F5'/%3E%3Cstop offset='1' stop-color='%232E9FE0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='%23ffffff'/%3E%3Cpath d='M26.44,40.08 L26.44,35.12 Q26.44,28.92 32.64,28.92 L43.8,28.92 L50,35.12 L67.36,35.12 Q73.56,35.12 73.56,40.08 Z' fill='url(%23tab2)'/%3E%3Cpath d='M32.64,40.08 L67.36,40.08 A6.2,6.2 0 0 1 73.56,46.28 L73.56,64.88 A6.2,6.2 0 0 1 67.36,71.08 L32.64,71.08 A6.2,6.2 0 0 1 26.44,64.88 L26.44,46.28 A6.2,6.2 0 0 1 32.64,40.08 Z' fill='url(%23body2)'/%3E%3Cpath d='M50,48.14 L50,60.54 M50,60.54 L43.18,53.72 M50,60.54 L56.82,53.72' stroke='%231B6FA8' stroke-width='4.34' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E";
+
     // ── Android bridge: save files natively when running inside the Sonbola Android app ──
     // In a regular browser window.AndroidDownloader doesn't exist, so this resolves false
     // and every caller falls back to its normal browser download path unchanged.
@@ -1348,8 +1359,10 @@
         theme_color: "#e85d3a",
         orientation: "portrait-primary",
         icons: [
-          { src: FOLDER_ICON_DATA_URI, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
-          { src: FOLDER_ICON_DATA_URI, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+          { src: FOLDER_ICON_DATA_URI, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+          { src: FOLDER_ICON_DATA_URI, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
+          { src: window.FOLDER_ICON_MASKABLE_DATA_URI, sizes: "192x192", type: "image/svg+xml", purpose: "maskable" },
+          { src: window.FOLDER_ICON_MASKABLE_DATA_URI, sizes: "512x512", type: "image/svg+xml", purpose: "maskable" }
         ]
       };
       const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
