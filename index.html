@@ -9269,7 +9269,7 @@ service cloud.firestore {
         : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
 
       // By region — country (+ region/state when known), best-effort (client-side IP lookup).
-      const regionCounts = countBy(events.map(e => ({ ...e, _place: [e.country, e.region].filter(Boolean).join(', ') || 'Unknown' })), '_place');
+      const regionCounts = countBy(events.map(e => ({ ...e, _place: [e.city, e.region, e.country].filter(Boolean).join(', ') || 'Unknown' })), '_place');
       const regionEntries = Object.entries(regionCounts).sort((a,b) => b[1]-a[1]).slice(0, 8);
       const regionMax = regionEntries.length ? regionEntries[0][1] : 1;
       document.getElementById('stats-by-region').innerHTML = regionEntries.length
@@ -9453,8 +9453,11 @@ service cloud.firestore {
           Folder: f ? f.name : '',
           Role: _statsRoleLabel(e.role),
           Device: e.device || '',
-          Country: e.country || '',
+          City: e.city || '',
           Region: e.region || '',
+          Country: e.country || '',
+          IP: e.ip || '',
+          VisitorId: e.visitorId || '',
           Date: ms ? new Date(ms).toLocaleString() : '',
         };
       });
@@ -10577,11 +10580,16 @@ service cloud.firestore {
       return 'desktop';
     }
 
-    // Best-effort IP geolocation (country/region only, no address) — this app has no backend
-    // to read the real request IP server-side, so this is a client-side call to a free public
-    // API. Cached per browser tab session so repeated actions (several downloads in one visit)
+    // Best-effort IP geolocation (country/region/city + the visitor's own IP) — no browser
+    // permission prompt is involved since this reads the request's IP address via a public API,
+    // not the device's real GPS (navigator.geolocation, which always shows a prompt and can't be
+    // bypassed by any website). Cached per browser tab session so repeated actions in one visit
     // don't re-hit the API each time; failures are swallowed since this must never block the
     // real download/share/navigation action it's attached to.
+    //
+    // Per explicit instruction: this includes the visitor's raw IP address for anonymous
+    // public-share visitors, with no in-app disclosure to them. Kept admin-only (Firestore rule
+    // restricts reads to isSuperAdmin()) and never exposed anywhere a customer could see it.
     async function _getCachedGeo() {
       try {
         const cached = sessionStorage.getItem('_geoCache');
@@ -10591,11 +10599,11 @@ service cloud.firestore {
         const resp = await fetch('https://ipapi.co/json/');
         if (!resp.ok) throw new Error('geo lookup failed');
         const data = await resp.json();
-        const geo = { country: data.country_name || null, region: data.region || null };
+        const geo = { country: data.country_name || null, region: data.region || null, city: data.city || null, ip: data.ip || null };
         try { sessionStorage.setItem('_geoCache', JSON.stringify(geo)); } catch (e) {}
         return geo;
       } catch (e) {
-        return { country: null, region: null };
+        return { country: null, region: null, city: null, ip: null };
       }
     }
 
@@ -10615,6 +10623,8 @@ service cloud.firestore {
             device: _analyticsDeviceType(),
             country: geo.country,
             region: geo.region,
+            city: geo.city,
+            ip: geo.ip,
             createdAt: serverTimestamp(),
           });
         } catch (e) { console.warn('analytics log failed:', e); }
