@@ -8528,6 +8528,12 @@ service cloud.firestore {
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Region</p>
                 <div id="stats-by-region" class="space-y-2"></div>
               </div>
+
+              <!-- Detailed per-role activity: exactly which folder/image, how many times, when -->
+              <div>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Activity by Role</p>
+                <div id="stats-role-breakdown" class="space-y-3"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -9261,6 +9267,81 @@ service cloud.firestore {
       document.getElementById('stats-by-region').innerHTML = regionEntries.length
         ? regionEntries.map(([place, count]) => _statsBarRow('🌍', place, count, regionMax, '#00bcd4')).join('')
         : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+
+      // Detailed per-role breakdown: for each role, exactly which folder/model, how many
+      // times, and the most recent time — not just an aggregate role count.
+      document.getElementById('stats-role-breakdown').innerHTML = _statsRoleBreakdownHTML(events, S);
+    }
+
+    const _statsTypeIcon = { folder_view: '📁', model_view: '🖼️', download: '⬇️', share: '🔗', share_link_view: '🔗' };
+    const _statsTypeLabel = { folder_view: 'Opened folder', model_view: 'Viewed image', download: 'Downloaded', share: 'Shared', share_link_view: 'Opened share link' };
+
+    function _statsEventMs(e) {
+      return e.createdAt?.toMillis ? e.createdAt.toMillis() : (e.createdAt?.seconds ? e.createdAt.seconds * 1000 : 0);
+    }
+
+    // For every role, break down exactly what was opened/downloaded/shared, how many times
+    // each, and when it last happened — the aggregate "By Role" bar above only shows a single
+    // total per role, which doesn't answer "which folder did the admin open, and how often".
+    function _statsRoleBreakdownHTML(events, S) {
+      const byRole = {};
+      events.forEach(e => {
+        const role = e.role || 'anonymous';
+        (byRole[role] = byRole[role] || []).push(e);
+      });
+      const roleOrder = ['admin', 'co_admin', 'user', 'anonymous'];
+      const roleColors = { admin: '#e85d3a', co_admin: '#a855f7', user: '#00bcd4', anonymous: '#22c55e' };
+      const presentRoles = roleOrder.filter(r => byRole[r] && byRole[r].length);
+      if (!presentRoles.length) return '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+
+      return presentRoles.map(role => {
+        const roleEvents = byRole[role];
+        // Group this role's events by exact target (folder or model) + type, so "opened
+        // folder X" and "downloaded model Y" show as separate lines with their own counts.
+        const groups = {};
+        roleEvents.forEach(e => {
+          let key, icon, label;
+          if (e.type === 'folder_view') {
+            const f = e.folderId ? (S.allFolders || []).find(x => x.id === e.folderId) : null;
+            key = 'folder:' + (e.folderId || 'none');
+            label = f ? (f.name || e.folderId) : (e.folderId ? `(deleted folder ${e.folderId})` : 'Unknown folder');
+          } else if (e.type === 'share_link_view') {
+            key = 'share_link_view';
+            label = 'Public share link';
+          } else {
+            const m = e.modelId ? (S.allModels || []).find(x => x.id === e.modelId) : null;
+            key = e.type + ':' + (e.modelId || 'none');
+            label = m ? (m.modelCode || e.modelId) : (e.modelId ? `(deleted model ${e.modelId})` : 'Unknown image');
+          }
+          const gk = key + '|' + e.type;
+          if (!groups[gk]) groups[gk] = { type: e.type, label, count: 0, lastMs: 0 };
+          groups[gk].count++;
+          const ms = _statsEventMs(e);
+          if (ms > groups[gk].lastMs) groups[gk].lastMs = ms;
+        });
+        const items = Object.values(groups).sort((a, b) => b.count - a.count);
+        const color = roleColors[role] || '#9ca3af';
+        const itemsHtml = items.map(it => {
+          const dateLabel = it.lastMs ? new Date(it.lastMs).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          return `<div class="flex items-center justify-between gap-2 py-1.5 border-b border-gray-50 last:border-0">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-sm shrink-0">${_statsTypeIcon[it.type] || '•'}</span>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-gray-700 truncate">${escapeHtml(it.label)}</p>
+                <p class="text-[10px] text-gray-400">${_statsTypeLabel[it.type] || it.type}${dateLabel ? ' — last: ' + dateLabel : ''}</p>
+              </div>
+            </div>
+            <span class="text-xs font-black shrink-0" style="color:${color}">${it.count}×</span>
+          </div>`;
+        }).join('');
+        return `<div class="rounded-xl border border-gray-100 overflow-hidden">
+          <div class="flex items-center justify-between px-3 py-2" style="background:${color}14;">
+            <span class="text-xs font-black" style="color:${color}">👤 ${_statsRoleLabel(role)}</span>
+            <span class="text-xs font-bold text-gray-500">${roleEvents.length} total</span>
+          </div>
+          <div class="px-3 py-1 bg-white">${itemsHtml}</div>
+        </div>`;
+      }).join('');
     }
 
     window.renderAdminStats = async function() {
