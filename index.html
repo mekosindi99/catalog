@@ -4196,6 +4196,7 @@ service cloud.firestore {
     function showFolderView(folderId) {
       window.exitSearchMode();
       currentFolderId = folderId;
+      if (window._logAnalyticsEvent) window._logAnalyticsEvent('folder_view', { folderId });
       const folder = allFolders.find(f => f.id === folderId);
       document.getElementById("folders-view").classList.add("hidden");
       document.getElementById("folder-interior").classList.remove("hidden");
@@ -5094,6 +5095,7 @@ service cloud.firestore {
       const models = sortModels(allModels.filter(m => dlSelectedModelIds.has(m.id)));
       const folder = allFolders.find(f => f.id === dlFolderId);
       const folderName = folder ? folder.name : "Folder";
+      models.forEach(m => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: dlFolderId }); });
       // Load jsPDF from CDN
       if (!window.jspdf) {
         await new Promise((res, rej) => {
@@ -5155,6 +5157,7 @@ service cloud.firestore {
       const folder = allFolders.find(f => f.id === dlFolderId);
       const folderName = folder ? folder.name : "Folder";
       showToast("Generating SVG...", "info");
+      models.forEach(m => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: dlFolderId }); });
       for (const model of models) {
         const dataUrl = await renderModelToDataUrl(model, dlSelectedMode, 'png');
         if (!dataUrl) continue;
@@ -5182,6 +5185,7 @@ service cloud.firestore {
       const models = sortModels(allModels.filter(m => dlSelectedModelIds.has(m.id)));
       const folder = allFolders.find(f => f.id === dlFolderId);
       const folderName = folder ? folder.name : "Folder";
+      models.forEach(m => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: dlFolderId }); });
       // Load PptxGenJS from CDN
       if (!window.PptxGenJS) {
         await new Promise((res, rej) => {
@@ -6562,6 +6566,12 @@ service cloud.firestore {
     window.renderPublicShareModels = function(models, folders) {
       allModels = models;
       allFolders = folders;
+      // Logged once per page load (not on every re-render — language switches / filter changes
+      // also call this same function), so one opened link = one share_link_view event.
+      if (!window._psvViewLogged && models.length) {
+        window._psvViewLogged = true;
+        if (window._logAnalyticsEvent) window._logAnalyticsEvent('share_link_view', {});
+      }
       applyPsvLanguage();
       const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
       const loading = document.getElementById('psv-loading');
@@ -6609,6 +6619,7 @@ service cloud.firestore {
     window.openPsvImageModal = function(modelId) {
       const m = allModels.find(x => x.id === modelId);
       if (!m) return;
+      if (window._logAnalyticsEvent) window._logAnalyticsEvent('model_view', { modelId, folderId: m.folderId || null });
       window._psvModalId = modelId;
       const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
       const img = document.getElementById('psv-modal-img');
@@ -6660,6 +6671,7 @@ service cloud.firestore {
         }
         return;
       }
+      if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId, folderId: m.folderId || null });
       try {
         const blob = await renderBadgedImageBlob(m, 'all');
         if (!blob) return;
@@ -6684,6 +6696,7 @@ service cloud.firestore {
     // Lets the anonymous visitor forward this exact same link onward — the link itself has
     // no expiry or per-recipient limit, so this can pass through any number of people.
     window.sharePublicShareLink = async function() {
+      if (window._logAnalyticsEvent) window._logAnalyticsEvent('share', {});
       const t = PSV_I18N[window._psvLang] || PSV_I18N.ar;
       const url = window.location.href;
       const label = document.getElementById('psv-share-btn-label');
@@ -7056,6 +7069,7 @@ service cloud.firestore {
       }
       const model = allModels.find(m => m.id === id);
       if (!model) return;
+      if (window._logAnalyticsEvent) window._logAnalyticsEvent('model_view', { modelId: id, folderId: model.folderId || null });
       editingId = id;
       resetForm();
       document.getElementById("modal-title").textContent = window.t('editModel');
@@ -7439,6 +7453,7 @@ service cloud.firestore {
       if (!(navigator.clipboard && typeof ClipboardItem !== 'undefined')) return false;
       const m = models[0];
       setStatus('Copying...');
+      if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: m.folderId || null });
       try {
         // Same code/price/age/discount badges as ZIP/Gallery export — a copied image should
         // carry the same info a customer would see anywhere else, not a bare photo.
@@ -7517,6 +7532,7 @@ service cloud.firestore {
         if (el) el.textContent = msg;
       };
       const ids = Array.from(selectedIds);
+      ids.forEach(modelId => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('share', { modelId }); });
       setStatus('Creating link...');
       // Prefer a short ?s=<code> link (code points at a "shared_links" Firestore doc holding
       // the real id list) so the link customers see is short and doesn't look like phishing.
@@ -7604,6 +7620,7 @@ service cloud.firestore {
       } catch(e) {}
       // Sort by current folder sort order
       const models=sortModels(allModels.filter(m=>selectedIds.has(m.id)));
+      models.forEach(m => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: m.folderId || null }); });
       showToast(`⏳ Preparing... (${models.length} models)`, "success");
       if(!window.JSZip){await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
       const zip=new window.JSZip();
@@ -7946,6 +7963,7 @@ service cloud.firestore {
       }
       const models = sortModels(allModels.filter(m => selectedIds.has(m.id)));
       if (!models.length) { showToast("No models selected", "error"); return; }
+      models.forEach(m => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: m.folderId || null }); });
 
       const btn   = document.getElementById("dl-confirm-btn");
       const label = document.getElementById("dl-confirm-label");
@@ -8043,6 +8061,7 @@ service cloud.firestore {
         // Not running inside the Android app — hand off to the Web Share API path instead.
         return window.shareSelectedImagesWeb(models);
       }
+      models.forEach(m => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: m.folderId || null }); });
 
       // Each image is an independent network fetch + canvas draw + base64 encode. Doing them
       // one at a time (await inside a for loop) made the total wait the SUM of every image's
@@ -8091,6 +8110,7 @@ service cloud.firestore {
         return;
       }
       setStatus(`Preparing ${models.length}...`);
+      models.forEach(m => { if (window._logAnalyticsEvent) window._logAnalyticsEvent('download', { modelId: m.id, folderId: m.folderId || null }); });
       try {
         // Each render is its own network fetch + canvas draw — running them one at a time
         // (await inside a for loop) meant total wait time was the SUM of every image's fetch
@@ -8274,6 +8294,7 @@ service cloud.firestore {
         <button onclick="switchAdminTab('folders')" id="tab-folders" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-transparent text-gray-400 hover:text-gray-700">Folders</button>
         <button onclick="switchAdminTab('users')" id="tab-users" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-transparent text-gray-400 hover:text-gray-700">👤 Users</button>
         <button onclick="switchAdminTab('sessions')" id="tab-sessions" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-transparent text-gray-400 hover:text-gray-700">🕒 Sessions</button>
+        <button onclick="switchAdminTab('stats')" id="tab-stats" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-transparent text-gray-400 hover:text-gray-700">📊 Statistics</button>
         <button onclick="switchAdminTab('appsettings')" id="tab-appsettings" class="admin-tab-btn shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-colors border-transparent text-gray-400 hover:text-gray-700">⚙️ App Settings</button>
 
       </div>
@@ -8481,6 +8502,84 @@ service cloud.firestore {
 
           <div id="sessions-table-body" class="space-y-2">
             <p class="text-xs text-gray-400 text-center py-6">Loading sessions...</p>
+          </div>
+        </div>
+
+        <!-- ── TAB: STATISTICS (admin-only) ── -->
+        <div id="admin-tab-stats" class="admin-tab-content hidden space-y-6">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Downloads, shares &amp; opens</p>
+            <div class="flex items-center gap-1.5">
+              <div id="stats-range-group" class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                <button onclick="setStatsRange(7)"  id="stats-range-7"  class="stats-range-btn px-2.5 py-1 text-[10px] font-bold rounded-md">7d</button>
+                <button onclick="setStatsRange(30)" id="stats-range-30" class="stats-range-btn px-2.5 py-1 text-[10px] font-bold rounded-md">30d</button>
+                <button onclick="setStatsRange(90)" id="stats-range-90" class="stats-range-btn px-2.5 py-1 text-[10px] font-bold rounded-md">90d</button>
+                <button onclick="setStatsRange('all')" id="stats-range-all" class="stats-range-btn px-2.5 py-1 text-[10px] font-bold rounded-md">All</button>
+              </div>
+              <button onclick="exportStatsPdf()" class="h-7 px-2.5 rounded-lg bg-red-50 border border-red-200 text-red-500 text-[10px] font-bold flex items-center gap-1 hover:bg-red-100 transition-colors">📄 PDF</button>
+              <button onclick="exportStatsExcel()" class="h-7 px-2.5 rounded-lg bg-green-50 border border-green-200 text-green-600 text-[10px] font-bold flex items-center gap-1 hover:bg-green-100 transition-colors">📊 Excel</button>
+            </div>
+          </div>
+
+          <div id="stats-loading" class="text-center py-10 text-xs text-gray-400">Loading statistics...</div>
+
+          <div id="stats-body" class="hidden space-y-6">
+            <!-- Stat tiles -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="bg-gray-50 rounded-2xl p-4 text-center">
+                <p id="stat-total-downloads" class="text-2xl font-black text-gray-800">0</p>
+                <p class="text-[10px] font-bold text-gray-400 mt-1">Downloads</p>
+              </div>
+              <div class="bg-gray-50 rounded-2xl p-4 text-center">
+                <p id="stat-total-shares" class="text-2xl font-black text-gray-800">0</p>
+                <p class="text-[10px] font-bold text-gray-400 mt-1">Shares</p>
+              </div>
+              <div class="bg-gray-50 rounded-2xl p-4 text-center">
+                <p id="stat-total-views" class="text-2xl font-black text-gray-800">0</p>
+                <p class="text-[10px] font-bold text-gray-400 mt-1">Folder + image opens</p>
+              </div>
+              <div class="bg-gray-50 rounded-2xl p-4 text-center">
+                <p id="stat-total-visitors" class="text-2xl font-black text-gray-800">0</p>
+                <p class="text-[10px] font-bold text-gray-400 mt-1">Unique visitors</p>
+              </div>
+            </div>
+
+            <!-- Top downloaded -->
+            <div>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Downloaded Images</p>
+              <div id="stats-top-downloaded" class="space-y-2"></div>
+            </div>
+
+            <!-- Top shared -->
+            <div>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Shared Images</p>
+              <div id="stats-top-shared" class="space-y-2"></div>
+            </div>
+
+            <!-- Top folders -->
+            <div>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Folders (downloads + shares)</p>
+              <div id="stats-top-folders" class="space-y-2"></div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-6">
+              <!-- By role -->
+              <div>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Role</p>
+                <div id="stats-by-role" class="space-y-2"></div>
+              </div>
+              <!-- By device -->
+              <div>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Device</p>
+                <div id="stats-by-device" class="space-y-2"></div>
+              </div>
+            </div>
+
+            <!-- By region -->
+            <div>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Region</p>
+              <div id="stats-by-region" class="space-y-2"></div>
+            </div>
           </div>
         </div>
 
@@ -8787,6 +8886,10 @@ service cloud.firestore {
       if (tab === 'users' && !(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
         tab = 'overview';
       }
+      // Statistics (downloads/shares/opens, with device+region breakdowns) is super-admin only.
+      if (tab === 'stats' && !(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) {
+        tab = 'overview';
+      }
       document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.classList.remove('border-[#e85d3a]', 'text-[#e85d3a]');
@@ -8802,6 +8905,7 @@ service cloud.firestore {
       if (tab === 'folders') renderAdminFolders();
       if (tab === 'users') loadManagedUsers();
       if (tab === 'sessions') loadLoginSessions();
+      if (tab === 'stats') renderAdminStats();
       if (tab === 'appsettings') { loadAppSettings(); if (window.loadDomainInfo) window.loadDomainInfo(); }
     };
 
@@ -8855,6 +8959,261 @@ service cloud.firestore {
         </div>`;
       }).join('');
     }
+
+    // ══════════════════════════════════════════════════════
+    // 📊 ADMIN STATISTICS TAB
+    // ══════════════════════════════════════════════════════
+    let _statsRangeDays = 30; // 7 | 30 | 90 | 'all'
+    let _statsCache = null;   // last-fetched raw events, re-aggregated locally on range change
+
+    window.setStatsRange = function(days) {
+      _statsRangeDays = days;
+      document.querySelectorAll('.stats-range-btn').forEach(b => {
+        const active = b.id === 'stats-range-' + days;
+        b.style.background = active ? '#e85d3a' : '';
+        b.style.color = active ? '#fff' : '#6b7280';
+      });
+      if (_statsCache) _renderStatsBody(_statsCache);
+    };
+
+    function _statsRoleLabel(role) {
+      return role === 'admin' ? 'Admin' : role === 'co_admin' ? 'Co-Admin' : role === 'user' ? 'User' : 'Anonymous visitor';
+    }
+
+    // Small reusable "label + count + proportional bar" row, same visual language as the
+    // Overview tab's top-folders cards (icon chip + name + count + bar).
+    function _statsBarRow(icon, label, count, maxCount, color) {
+      const pct = Math.round((count / Math.max(maxCount, 1)) * 100);
+      return `<div class="flex items-center gap-3 p-2.5 rounded-xl bg-white border border-gray-100">
+        <span class="text-sm shrink-0">${icon}</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-xs font-bold text-gray-700 truncate">${escapeHtml(label)}</p>
+            <span class="text-xs font-bold text-gray-500 shrink-0 ml-2">${count}</span>
+          </div>
+          <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full rounded-full transition-all" style="width:${pct}%;background:${color}"></div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // Ranked list of top models by a given event-type count, with thumbnail + code.
+    function _statsTopModelsList(counts, S) {
+      const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      if (!entries.length) return '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+      const maxCount = entries[0][1];
+      return entries.map(([modelId, count]) => {
+        const m = (S.allModels || []).find(x => x.id === modelId);
+        const label = m ? (m.modelCode || modelId) : `(deleted model ${modelId})`;
+        const img = m ? (optimizedCloudinaryUrl(m.imageUrl, '400x400') || '') : '';
+        const pct = Math.round((count / Math.max(maxCount, 1)) * 100);
+        return `<div class="flex items-center gap-3 p-2.5 rounded-xl bg-white border border-gray-100">
+          <div class="w-9 h-9 rounded-lg shrink-0 overflow-hidden bg-gray-100">
+            ${img ? `<img src="${img}" class="w-full h-full object-cover" />` : ''}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-xs font-bold text-gray-700 truncate">${escapeHtml(label)}</p>
+              <span class="text-xs font-bold text-gray-500 shrink-0 ml-2">${count}</span>
+            </div>
+            <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all" style="width:${pct}%;background:#e85d3a"></div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function _statsFilteredEvents(rawEvents) {
+      if (_statsRangeDays === 'all') return rawEvents;
+      const cutoff = Date.now() - _statsRangeDays * 24 * 60 * 60 * 1000;
+      return rawEvents.filter(e => {
+        const ms = e.createdAt?.toMillis ? e.createdAt.toMillis() : (e.createdAt?.seconds ? e.createdAt.seconds * 1000 : 0);
+        return ms >= cutoff;
+      });
+    }
+
+    function _renderStatsBody(rawEvents) {
+      const S = window._appState;
+      const events = _statsFilteredEvents(rawEvents);
+
+      const downloads = events.filter(e => e.type === 'download');
+      const shares = events.filter(e => e.type === 'share');
+      const views = events.filter(e => e.type === 'folder_view' || e.type === 'model_view');
+      const visitorIds = new Set(events.map(e => e.visitorId).filter(Boolean));
+
+      document.getElementById('stat-total-downloads').textContent = downloads.length;
+      document.getElementById('stat-total-shares').textContent = shares.length;
+      document.getElementById('stat-total-views').textContent = views.length;
+      document.getElementById('stat-total-visitors').textContent = visitorIds.size;
+
+      const countBy = (list, key) => list.reduce((acc, e) => {
+        const k = e[key]; if (!k) return acc;
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+
+      document.getElementById('stats-top-downloaded').innerHTML = _statsTopModelsList(countBy(downloads, 'modelId'), S);
+      document.getElementById('stats-top-shared').innerHTML = _statsTopModelsList(countBy(shares, 'modelId'), S);
+
+      // Top folders — combine downloads+shares, either logged directly against a folderId
+      // (folder_view events) or inherited from the model's own folderId (download/share events).
+      const folderCounts = {};
+      [...downloads, ...shares].forEach(e => {
+        let fid = e.folderId;
+        if (!fid && e.modelId) {
+          const m = (S.allModels || []).find(x => x.id === e.modelId);
+          fid = m ? m.folderId : null;
+        }
+        if (!fid) return;
+        folderCounts[fid] = (folderCounts[fid] || 0) + 1;
+      });
+      const folderEntries = Object.entries(folderCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const folderMax = folderEntries.length ? folderEntries[0][1] : 1;
+      document.getElementById('stats-top-folders').innerHTML = folderEntries.length
+        ? folderEntries.map(([fid, count]) => {
+            const f = (S.allFolders || []).find(x => x.id === fid);
+            return _statsBarRow('📁', f ? (f.name || fid) : `(deleted folder ${fid})`, count, folderMax, f ? (f.color || '#e85d3a') : '#9ca3af');
+          }).join('')
+        : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+
+      // By role
+      const roleCounts = countBy(events, 'role');
+      const roleMax = Math.max(...Object.values(roleCounts), 1);
+      const roleColors = { admin: '#e85d3a', co_admin: '#a855f7', user: '#00bcd4', anonymous: '#22c55e' };
+      document.getElementById('stats-by-role').innerHTML = Object.keys(roleCounts).length
+        ? Object.entries(roleCounts).sort((a,b) => b[1]-a[1]).map(([role, count]) =>
+            _statsBarRow('👤', _statsRoleLabel(role), count, roleMax, roleColors[role] || '#9ca3af')
+          ).join('')
+        : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+
+      // By device
+      const deviceCounts = countBy(events, 'device');
+      const deviceMax = Math.max(...Object.values(deviceCounts), 1);
+      const deviceIcons = { mobile: '📱', tablet: '📲', desktop: '💻' };
+      document.getElementById('stats-by-device').innerHTML = Object.keys(deviceCounts).length
+        ? Object.entries(deviceCounts).sort((a,b) => b[1]-a[1]).map(([device, count]) =>
+            _statsBarRow(deviceIcons[device] || '📟', device.charAt(0).toUpperCase() + device.slice(1), count, deviceMax, '#e85d3a')
+          ).join('')
+        : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+
+      // By region — country (+ region/state when known), best-effort (client-side IP lookup).
+      const regionCounts = countBy(events.map(e => ({ ...e, _place: [e.country, e.region].filter(Boolean).join(', ') || 'Unknown' })), '_place');
+      const regionEntries = Object.entries(regionCounts).sort((a,b) => b[1]-a[1]).slice(0, 8);
+      const regionMax = regionEntries.length ? regionEntries[0][1] : 1;
+      document.getElementById('stats-by-region').innerHTML = regionEntries.length
+        ? regionEntries.map(([place, count]) => _statsBarRow('🌍', place, count, regionMax, '#00bcd4')).join('')
+        : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+    }
+
+    window.renderAdminStats = async function() {
+      if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) return; // admin-only, defense in depth
+      const loading = document.getElementById('stats-loading');
+      const body = document.getElementById('stats-body');
+      loading.classList.remove('hidden');
+      body.classList.add('hidden');
+      window.setStatsRange(_statsRangeDays);
+      try {
+        _statsCache = await window._fbGetAnalyticsEvents(5000);
+        _renderStatsBody(_statsCache);
+        loading.classList.add('hidden');
+        body.classList.remove('hidden');
+      } catch (e) {
+        console.error('renderAdminStats failed:', e);
+        loading.textContent = 'Could not load statistics — make sure the analytics_events Firestore rule is published.';
+      }
+    };
+
+    // ── Export: PDF (reuses the same lazy-loaded jsPDF used by the per-folder PDF export) ──
+    window.exportStatsPdf = async function() {
+      if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) return;
+      if (!_statsCache) return;
+      const S = window._appState;
+      const events = _statsFilteredEvents(_statsCache);
+      if (!window.jspdf) {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      let y = 20;
+      doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+      doc.text('Catalog — Statistics Report', 15, y); y += 8;
+      doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+      doc.text(`Range: ${_statsRangeDays === 'all' ? 'All time' : 'Last ' + _statsRangeDays + ' days'} — generated ${new Date().toLocaleString()}`, 15, y); y += 10;
+
+      const downloads = events.filter(e => e.type === 'download');
+      const shares = events.filter(e => e.type === 'share');
+      const views = events.filter(e => e.type === 'folder_view' || e.type === 'model_view');
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+      doc.text(`Downloads: ${downloads.length}   Shares: ${shares.length}   Opens: ${views.length}`, 15, y); y += 10;
+
+      const countBy = (list, key) => list.reduce((acc, e) => { const k = e[key]; if (k) acc[k] = (acc[k]||0)+1; return acc; }, {});
+      const topDl = Object.entries(countBy(downloads, 'modelId')).sort((a,b)=>b[1]-a[1]).slice(0, 15);
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Top Downloaded Models', 15, y); y += 6;
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      topDl.forEach(([modelId, count]) => {
+        const m = (S.allModels || []).find(x => x.id === modelId);
+        doc.text(`${m ? m.modelCode : modelId} — ${count}`, 18, y); y += 5;
+        if (y > 280) { doc.addPage(); y = 20; }
+      });
+      y += 4;
+      const topShare = Object.entries(countBy(shares, 'modelId')).sort((a,b)=>b[1]-a[1]).slice(0, 15);
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Top Shared Models', 15, y); y += 6;
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      topShare.forEach(([modelId, count]) => {
+        const m = (S.allModels || []).find(x => x.id === modelId);
+        doc.text(`${m ? m.modelCode : modelId} — ${count}`, 18, y); y += 5;
+        if (y > 280) { doc.addPage(); y = 20; }
+      });
+
+      const pdfName = buildDownloadFilename('stats', 'pdf');
+      const saved = await window.saveBlobToDevice(doc.output('blob'), pdfName, false);
+      if (!saved) doc.save(pdfName);
+      showToast('Statistics PDF downloaded ✓', 'success');
+    };
+
+    // ── Export: Excel (SheetJS — no xlsx library existed anywhere in this app before) ──
+    window.exportStatsExcel = async function() {
+      if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) return;
+      if (!_statsCache) return;
+      const S = window._appState;
+      const events = _statsFilteredEvents(_statsCache);
+      if (!window.XLSX) {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      const rows = events.map(e => {
+        const m = e.modelId ? (S.allModels || []).find(x => x.id === e.modelId) : null;
+        const f = e.folderId ? (S.allFolders || []).find(x => x.id === e.folderId) : null;
+        const ms = e.createdAt?.toMillis ? e.createdAt.toMillis() : (e.createdAt?.seconds ? e.createdAt.seconds * 1000 : null);
+        return {
+          Type: e.type,
+          ModelCode: m ? m.modelCode : '',
+          Folder: f ? f.name : '',
+          Role: _statsRoleLabel(e.role),
+          Device: e.device || '',
+          Country: e.country || '',
+          Region: e.region || '',
+          Date: ms ? new Date(ms).toLocaleString() : '',
+        };
+      });
+      const wb = window.XLSX.utils.book_new();
+      const ws = window.XLSX.utils.json_to_sheet(rows);
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Events');
+      const xlsxName = buildDownloadFilename('stats', 'xlsx');
+      window.XLSX.writeFile(wb, xlsxName);
+      showToast('Statistics Excel file downloaded ✓', 'success');
+    };
 
     window._adminFolderFilter = '';
     function renderAdminFolders(filter) {
@@ -9937,6 +10296,87 @@ service cloud.firestore {
         return code;
       }
       throw new Error("Could not generate a unique short link code");
+    };
+
+    // ══════════════════════════════════════════════════════
+    // 📊 ANALYTICS — admin-only stats on downloads/shares/opens
+    // ══════════════════════════════════════════════════════
+
+    // A random id persisted per-browser for anonymous public-share visitors (staff use their
+    // real Firebase Auth uid instead — see _analyticsVisitorId()). There was no visitor identity
+    // of any kind for the public share view before this.
+    function _getPsvVisitorId() {
+      try {
+        let id = localStorage.getItem('psvVisitorId');
+        if (!id) {
+          id = (crypto.randomUUID ? crypto.randomUUID() : ('v' + Date.now() + Math.random().toString(36).slice(2)));
+          localStorage.setItem('psvVisitorId', id);
+        }
+        return id;
+      } catch (e) { return 'unknown'; }
+    }
+    function _analyticsVisitorId() {
+      const u = window._appState && window._appState.currentUser;
+      return (u && u.uid) || _getPsvVisitorId();
+    }
+    function _analyticsDeviceType() {
+      const ua = navigator.userAgent || '';
+      if (/Tablet|iPad/i.test(ua)) return 'tablet';
+      if (/Mobi|Android/i.test(ua)) return 'mobile';
+      return 'desktop';
+    }
+
+    // Best-effort IP geolocation (country/region only, no address) — this app has no backend
+    // to read the real request IP server-side, so this is a client-side call to a free public
+    // API. Cached per browser tab session so repeated actions (several downloads in one visit)
+    // don't re-hit the API each time; failures are swallowed since this must never block the
+    // real download/share/navigation action it's attached to.
+    async function _getCachedGeo() {
+      try {
+        const cached = sessionStorage.getItem('_geoCache');
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+      try {
+        const resp = await fetch('https://ipapi.co/json/');
+        if (!resp.ok) throw new Error('geo lookup failed');
+        const data = await resp.json();
+        const geo = { country: data.country_name || null, region: data.region || null };
+        try { sessionStorage.setItem('_geoCache', JSON.stringify(geo)); } catch (e) {}
+        return geo;
+      } catch (e) {
+        return { country: null, region: null };
+      }
+    }
+
+    // Fire-and-forget — a Firestore hiccup or an ad-blocker blocking the geo call must never
+    // break the actual download/share/navigation this is attached to.
+    window._logAnalyticsEvent = function(type, opts) {
+      opts = opts || {};
+      (async () => {
+        try {
+          const geo = await _getCachedGeo();
+          await addDoc(collection(db, 'analytics_events'), {
+            type,
+            modelId: opts.modelId || null,
+            folderId: opts.folderId || null,
+            role: window._currentUserRole || 'anonymous',
+            visitorId: _analyticsVisitorId(),
+            device: _analyticsDeviceType(),
+            country: geo.country,
+            region: geo.region,
+            createdAt: serverTimestamp(),
+          });
+        } catch (e) { console.warn('analytics log failed:', e); }
+      })();
+    };
+
+    // Reads up to `limitCount` most recent events (admin-only per Firestore rules) — a flat
+    // ordered fetch rather than a `where(createdAt >= X)` range query so no composite index is
+    // needed; the date-range toggle in the Statistics tab filters client-side after this.
+    window._fbGetAnalyticsEvents = async function(limitCount) {
+      const q = query(collection(db, 'analytics_events'), orderBy('createdAt', 'desc'), limit(limitCount || 5000));
+      const snap = await getDocsTop(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
     };
 
     // ── Duplicate models into a new folder ──
