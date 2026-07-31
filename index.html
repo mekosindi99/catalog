@@ -9304,7 +9304,7 @@ service cloud.firestore {
         // folder X" and "downloaded model Y" show as separate lines with their own counts.
         const groups = {};
         roleEvents.forEach(e => {
-          let key, icon, label;
+          let key, icon, label, img = null;
           if (e.type === 'folder_view') {
             const f = e.folderId ? (S.allFolders || []).find(x => x.id === e.folderId) : null;
             key = 'folder:' + (e.folderId || 'none');
@@ -9316,9 +9316,10 @@ service cloud.firestore {
             const m = e.modelId ? (S.allModels || []).find(x => x.id === e.modelId) : null;
             key = e.type + ':' + (e.modelId || 'none');
             label = m ? (m.modelCode || e.modelId) : (e.modelId ? `(deleted model ${e.modelId})` : 'Unknown image');
+            img = m ? (optimizedCloudinaryUrl(m.imageUrl, '400x400') || '') : '';
           }
           const gk = key + '|' + e.type;
-          if (!groups[gk]) groups[gk] = { type: e.type, label, count: 0, lastMs: 0 };
+          if (!groups[gk]) groups[gk] = { type: e.type, label, img, count: 0, lastMs: 0 };
           groups[gk].count++;
           const ms = _statsEventMs(e);
           if (ms > groups[gk].lastMs) groups[gk].lastMs = ms;
@@ -9327,9 +9328,14 @@ service cloud.firestore {
         const color = roleColors[role] || '#9ca3af';
         const itemsHtml = items.map(it => {
           const dateLabel = it.lastMs ? new Date(it.lastMs).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          // A model code alone ("S127") is hard to tell apart at a glance — show the actual
+          // product thumbnail next to it for anything tied to a specific model.
+          const thumb = it.img
+            ? `<div class="w-7 h-7 rounded-md shrink-0 overflow-hidden bg-gray-100"><img src="${it.img}" class="w-full h-full object-cover" /></div>`
+            : `<span class="text-sm shrink-0">${_statsTypeIcon[it.type] || '•'}</span>`;
           return `<div class="flex items-center justify-between gap-2 py-1.5 border-b border-gray-50 last:border-0">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-sm shrink-0">${_statsTypeIcon[it.type] || '•'}</span>
+              ${thumb}
               <div class="min-w-0">
                 <p class="text-xs font-bold text-gray-700 truncate">${escapeHtml(it.label)}</p>
                 <p class="text-[10px] text-gray-400">${_statsTypeLabel[it.type] || it.type}${dateLabel ? ' — last: ' + dateLabel : ''}</p>
