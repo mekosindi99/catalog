@@ -1780,9 +1780,10 @@
 
         <button onclick="closeSideMenu(); setTimeout(openWeatherSettingsModal, 300);"
           class="sheet-admin-tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-orange-50 transition-colors">
-          <span class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-500 shrink-0">
+          <span class="w-8 h-8 rounded-lg bg-[#1a1a2e] flex items-center justify-center text-white shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 001.7-9.7 6 6 0 00-11.4 1A4 4 0 003 15z"/>
+              <circle cx="12" cy="12" r="4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/>
             </svg>
           </span>
           <span>Weather Settings</span>
@@ -8537,16 +8538,44 @@ service cloud.firestore {
                 </div>
               </div>
 
-              <!-- By region -->
+              <!-- By region (Iraqi governorate when detected, city/country otherwise) -->
               <div>
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Region</p>
                 <div id="stats-by-region" class="space-y-2"></div>
+              </div>
+
+              <!-- By hour of day -->
+              <div>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Hour of Day</p>
+                <div id="stats-by-hour" class="flex items-end gap-1 h-24 bg-gray-50 rounded-xl p-2"></div>
               </div>
 
               <!-- Detailed per-role activity: exactly which folder/image, how many times, when -->
               <div>
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Activity by Role</p>
                 <div id="stats-role-breakdown" class="space-y-3"></div>
+              </div>
+
+              <!-- Raw recent event log -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Visits (most recent 50)</p>
+                  <button onclick="clearAllAnalyticsData()" class="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors">🗑️ Clear All Data</button>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-gray-100">
+                  <table class="w-full text-xs">
+                    <thead>
+                      <tr class="bg-gray-50 text-gray-400 text-[10px] uppercase">
+                        <th class="text-left px-2 py-1.5 font-black">Time</th>
+                        <th class="text-left px-2 py-1.5 font-black">Role</th>
+                        <th class="text-left px-2 py-1.5 font-black">Action</th>
+                        <th class="text-left px-2 py-1.5 font-black">Device</th>
+                        <th class="text-left px-2 py-1.5 font-black">Region</th>
+                      </tr>
+                    </thead>
+                    <tbody id="stats-live-visits"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -9290,7 +9319,7 @@ service cloud.firestore {
         : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
 
       // By region — country (+ region/state when known), best-effort (client-side IP lookup).
-      const regionCounts = countBy(events.map(e => ({ ...e, _place: [e.city, e.region, e.country].filter(Boolean).join(', ') || 'Unknown' })), '_place');
+      const regionCounts = countBy(events.map(e => ({ ...e, _place: [e.city, e.governorate || e.region, e.country].filter(Boolean).join(', ') || 'Unknown' })), '_place');
       const regionEntries = Object.entries(regionCounts).sort((a,b) => b[1]-a[1]).slice(0, 8);
       const regionMax = regionEntries.length ? regionEntries[0][1] : 1;
       document.getElementById('stats-by-region').innerHTML = regionEntries.length
@@ -9300,7 +9329,56 @@ service cloud.firestore {
       // Detailed per-role breakdown: for each role, exactly which folder/model, how many
       // times, and the most recent time — not just an aggregate role count.
       document.getElementById('stats-role-breakdown').innerHTML = _statsRoleBreakdownHTML(events, S);
+
+      // By hour of day (0-23), same idea as sonbola.shop's own storefront visitor dashboard.
+      const hourCounts = new Array(24).fill(0);
+      events.forEach(e => { const ms = _statsEventMs(e); if (ms) hourCounts[new Date(ms).getHours()]++; });
+      const hourMax = Math.max(...hourCounts, 1);
+      const hourEl = document.getElementById('stats-by-hour');
+      if (hourEl) {
+        hourEl.innerHTML = hourCounts.map((c, h) => {
+          const pct = Math.round((c / hourMax) * 100);
+          return `<div class="flex-1 flex flex-col items-center justify-end h-full gap-0.5" title="${h}:00 — ${c}">
+            <div class="w-full rounded-sm" style="height:${Math.max(pct, 2)}%;background:${c ? '#e85d3a' : '#e5e7eb'};min-height:2px;"></div>
+            <span class="text-[8px] text-gray-400">${h}</span>
+          </div>`;
+        }).join('');
+      }
+
+      // Raw recent event log ("Live Visits") — most recent 50, newest first.
+      const liveEl = document.getElementById('stats-live-visits');
+      if (liveEl) {
+        const recent = [...events].sort((a, b) => _statsEventMs(b) - _statsEventMs(a)).slice(0, 50);
+        liveEl.innerHTML = recent.length ? recent.map(e => {
+          const ms = _statsEventMs(e);
+          const timeLabel = ms ? new Date(ms).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          const place = [e.city, e.governorate || e.region].filter(Boolean).join(', ') || e.country || '—';
+          return `<tr class="border-t border-gray-50">
+            <td class="px-2 py-1.5 text-gray-500 whitespace-nowrap">${timeLabel}</td>
+            <td class="px-2 py-1.5 font-semibold">${_statsRoleLabel(e.role)}</td>
+            <td class="px-2 py-1.5">${_statsTypeIcon[e.type] || '•'} ${_statsTypeLabel[e.type] || e.type}</td>
+            <td class="px-2 py-1.5 text-gray-500">${e.device || ''}</td>
+            <td class="px-2 py-1.5 text-gray-500">${escapeHtml(place)}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="5" class="text-center text-gray-400 py-4">No data in this range</td></tr>';
+      }
     }
+
+    // Admin-only, irreversible — wipes the entire analytics_events collection (matching
+    // sonbola.shop's own dashboard, which has the same "Clear All" data-retention control).
+    // The actual Firestore delete calls (deleteDoc/doc/db) live in the module script — see
+    // window._fbClearAnalyticsEvents — since those Firebase SDK imports aren't in scope here.
+    window.clearAllAnalyticsData = async function() {
+      if (!(window._canDeletePermanentlyUI && window._canDeletePermanentlyUI())) return;
+      if (!window.confirm('Permanently delete ALL analytics data (downloads, shares, opens)? This cannot be undone.')) return;
+      try {
+        await window._fbClearAnalyticsEvents();
+        showToast('All analytics data cleared ✓', 'success');
+        renderAdminStats();
+      } catch (e) {
+        showToast('Error clearing analytics data', 'error');
+      }
+    };
 
     const _statsTypeIcon = { folder_view: '📁', model_view: '🖼️', download: '⬇️', share: '🔗', share_link_view: '🔗' };
     const _statsTypeLabel = { folder_view: 'Opened folder', model_view: 'Viewed image', download: 'Downloaded', share: 'Shared', share_link_view: 'Opened share link' };
@@ -10601,6 +10679,29 @@ service cloud.firestore {
       return 'desktop';
     }
 
+    // Maps a free geo-IP API's English region/state name to the matching Iraqi governorate
+    // name in Arabic — same idea sonbola.shop's own storefront dashboard uses for its visitor
+    // stats, so the two projects report location the same way. Falls back to the raw region
+    // name unchanged if it isn't a recognized Iraqi governorate (covers non-Iraq visitors too).
+    const _REGION_TO_GOVERNORATE = {
+      'baghdad': 'بغداد', 'basra': 'البصرة', 'basrah': 'البصرة', 'nineveh': 'نينوى', 'ninawa': 'نينوى',
+      'erbil': 'أربيل', 'arbil': 'أربيل', 'hawler': 'أربيل', 'duhok': 'دهوك', 'dahuk': 'دهوك',
+      'sulaymaniyah': 'السليمانية', 'as sulaymaniyah': 'السليمانية', 'kirkuk': 'كركوك',
+      'najaf': 'النجف', 'an najaf': 'النجف', 'karbala': 'كربلاء', 'babil': 'بابل', 'babylon': 'بابل',
+      'wasit': 'واسط', 'diyala': 'ديالى', 'anbar': 'الأنبار', 'al anbar': 'الأنبار',
+      'salah al-din': 'صلاح الدين', 'saladin': 'صلاح الدين', 'salahuddin': 'صلاح الدين',
+      'dhi qar': 'ذي قار', 'thi-qar': 'ذي قار', 'nasiriyah': 'ذي قار',
+      'maysan': 'ميسان', 'missan': 'ميسان', 'amarah': 'ميسان',
+      'muthanna': 'المثنى', 'al muthanna': 'المثنى', 'samawah': 'المثنى',
+      'qadisiyyah': 'القادسية', 'al-qadisiyyah': 'القادسية', 'diwaniyah': 'القادسية',
+      'halabja': 'حلبجة',
+    };
+    function _mapRegionToGovernorate(regionName) {
+      if (!regionName) return null;
+      const key = regionName.toLowerCase().replace(/governorate|province/g, '').trim();
+      return _REGION_TO_GOVERNORATE[key] || regionName;
+    }
+
     // Best-effort IP geolocation (country/region/city + the visitor's own IP) — no browser
     // permission prompt is involved since this reads the request's IP address via a public API,
     // not the device's real GPS (navigator.geolocation, which always shows a prompt and can't be
@@ -10620,11 +10721,17 @@ service cloud.firestore {
         const resp = await fetch('https://ipapi.co/json/');
         if (!resp.ok) throw new Error('geo lookup failed');
         const data = await resp.json();
-        const geo = { country: data.country_name || null, region: data.region || null, city: data.city || null, ip: data.ip || null };
+        const geo = {
+          country: data.country_name || null,
+          region: data.region || null,
+          governorate: _mapRegionToGovernorate(data.region),
+          city: data.city || null,
+          ip: data.ip || null,
+        };
         try { sessionStorage.setItem('_geoCache', JSON.stringify(geo)); } catch (e) {}
         return geo;
       } catch (e) {
-        return { country: null, region: null, city: null, ip: null };
+        return { country: null, region: null, governorate: null, city: null, ip: null };
       }
     }
 
@@ -10644,8 +10751,10 @@ service cloud.firestore {
             device: _analyticsDeviceType(),
             country: geo.country,
             region: geo.region,
+            governorate: geo.governorate,
             city: geo.city,
             ip: geo.ip,
+            referrer: document.referrer || null,
             createdAt: serverTimestamp(),
           });
         } catch (e) { console.warn('analytics log failed:', e); }
@@ -10659,6 +10768,13 @@ service cloud.firestore {
       const q = query(collection(db, 'analytics_events'), orderBy('createdAt', 'desc'), limit(limitCount || 5000));
       const snap = await getDocsTop(q);
       return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    };
+
+    // Irreversible bulk delete of the entire analytics_events collection — admin-only gate is
+    // enforced by the caller (window.clearAllAnalyticsData in the classic script).
+    window._fbClearAnalyticsEvents = async function() {
+      const snap = await getDocsTop(collection(db, 'analytics_events'));
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'analytics_events', d.id))));
     };
 
     // ── Duplicate models into a new folder ──
@@ -11738,10 +11854,16 @@ service cloud.firestore {
           } catch (e) { return { city, daily: null }; }
         }));
         if (grid) {
-          grid.innerHTML = results.map(({ city, daily }) => {
+          // Collapsed by default — showing all 20 cities' full multi-day forecasts at once was
+          // a wall of text; now each city is just a name/current-temp header until tapped.
+          grid.innerHTML = results.map(({ city, daily }, idx) => {
+            const panelId = 'weather-panel-' + idx;
             if (!daily) {
               return `<div class="bg-white rounded-2xl border border-gray-100 p-4"><p class="text-sm font-bold text-gray-700">${escapeHtml(city.nameAr)} (${city.name})</p><p class="text-xs text-gray-400 mt-2">Couldn't load forecast</p></div>`;
             }
+            const nowIcon = _weatherIcon(daily.weathercode[0]);
+            const nowHi = Math.round(daily.temperature_2m_max[0]);
+            const nowLo = Math.round(daily.temperature_2m_min[0]);
             const rows = daily.time.map((date, i) => {
               const hi = Math.round(daily.temperature_2m_max[i]);
               const lo = Math.round(daily.temperature_2m_min[i]);
@@ -11754,15 +11876,31 @@ service cloud.firestore {
                 <span class="text-xs font-bold text-gray-700">${hi}° <span class="text-gray-400 font-medium">/ ${lo}°</span></span>
               </div>`;
             }).join('');
-            return `<div class="bg-white rounded-2xl border border-gray-100 p-4">
-              <p class="text-sm font-bold text-gray-800">${escapeHtml(city.nameAr)} <span class="text-gray-400 font-normal">(${city.name})</span></p>
-              <div class="mt-2">${rows}</div>
+            return `<div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <button type="button" onclick="toggleWeatherCityPanel('${panelId}')" class="w-full flex items-center justify-between p-4 text-left">
+                <p class="text-sm font-bold text-gray-800">${escapeHtml(city.nameAr)} <span class="text-gray-400 font-normal">(${city.name})</span></p>
+                <span class="flex items-center gap-2 shrink-0">
+                  <span class="text-base">${nowIcon}</span>
+                  <span class="text-xs font-bold text-gray-600">${nowHi}°/${nowLo}°</span>
+                  <svg class="w-3.5 h-3.5 text-gray-400 weather-chevron" id="${panelId}-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </span>
+              </button>
+              <div id="${panelId}" class="hidden px-4 pb-4">${rows}</div>
             </div>`;
           }).join('');
         }
       } catch (e) {
         if (grid) grid.innerHTML = '<p class="text-center text-xs text-red-400 py-10 col-span-full">Could not load weather data</p>';
       }
+    };
+
+    window.toggleWeatherCityPanel = function(panelId) {
+      const panel = document.getElementById(panelId);
+      const chevron = document.getElementById(panelId + '-chevron');
+      if (!panel) return;
+      const isHidden = panel.classList.contains('hidden');
+      panel.classList.toggle('hidden', !isHidden);
+      if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
     };
 
     window.closeWeatherView = function() {
