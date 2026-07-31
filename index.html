@@ -8620,6 +8620,18 @@ service cloud.firestore {
               </div>
             </div>
 
+            <!-- Top opened folders -->
+            <div>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Most Opened Folders</p>
+              <div id="stats-top-opened-folders" class="space-y-2"></div>
+            </div>
+
+            <!-- Top viewed images -->
+            <div>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Most Viewed Images</p>
+              <div id="stats-top-viewed" class="space-y-2"></div>
+            </div>
+
             <!-- Top downloaded -->
             <div>
               <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Downloaded Images</p>
@@ -8634,7 +8646,7 @@ service cloud.firestore {
 
             <!-- Top folders -->
             <div>
-              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Folders (downloads + shares)</p>
+              <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Folders (opens + downloads + shares)</p>
               <div id="stats-top-folders" class="space-y-2"></div>
             </div>
 
@@ -9135,10 +9147,27 @@ service cloud.firestore {
       document.getElementById('stats-top-downloaded').innerHTML = _statsTopModelsList(countBy(downloads, 'modelId'), S);
       document.getElementById('stats-top-shared').innerHTML = _statsTopModelsList(countBy(shares, 'modelId'), S);
 
-      // Top folders — combine downloads+shares, either logged directly against a folderId
-      // (folder_view events) or inherited from the model's own folderId (download/share events).
+      // Most opened folders / most viewed images — these were being logged correctly all
+      // along (folder_view / model_view events, visible in the By Role/Device/Region
+      // breakdowns), just never surfaced as their own ranked list before.
+      const folderViews = events.filter(e => e.type === 'folder_view');
+      const modelViews = events.filter(e => e.type === 'model_view');
+      const folderViewCounts = countBy(folderViews, 'folderId');
+      const folderViewEntries = Object.entries(folderViewCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const folderViewMax = folderViewEntries.length ? folderViewEntries[0][1] : 1;
+      document.getElementById('stats-top-opened-folders').innerHTML = folderViewEntries.length
+        ? folderViewEntries.map(([fid, count]) => {
+            const f = (S.allFolders || []).find(x => x.id === fid);
+            return _statsBarRow('📁', f ? (f.name || fid) : `(deleted folder ${fid})`, count, folderViewMax, f ? (f.color || '#e85d3a') : '#9ca3af');
+          }).join('')
+        : '<p class="text-xs text-gray-400 text-center py-4">No data in this range</p>';
+      document.getElementById('stats-top-viewed').innerHTML = _statsTopModelsList(countBy(modelViews, 'modelId'), S);
+
+      // Top folders — combines opens+downloads+shares, either logged directly against a
+      // folderId (folder_view events) or inherited from the model's own folderId (model_view/
+      // download/share events).
       const folderCounts = {};
-      [...downloads, ...shares].forEach(e => {
+      [...folderViews, ...modelViews, ...downloads, ...shares].forEach(e => {
         let fid = e.folderId;
         if (!fid && e.modelId) {
           const m = (S.allModels || []).find(x => x.id === e.modelId);
