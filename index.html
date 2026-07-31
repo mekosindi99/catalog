@@ -2445,6 +2445,18 @@ service cloud.firestore {
     </div>
   </div>
 
+  <!-- Per-city forecast popup — sits above weather-modal (higher z-index), opened by tapping
+       a city card. -->
+  <div id="weather-city-modal" class="hidden fixed inset-0 z-[9600] items-center justify-center p-3 sm:p-4" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);" onclick="if(event.target===this) closeWeatherCityDetail()">
+    <div class="bg-white rounded-2xl w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden shadow-2xl" style="animation:modalIn 0.2s ease">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+        <p id="weather-city-title" class="font-extrabold text-gray-800"></p>
+        <button onclick="closeWeatherCityDetail()" class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">✕</button>
+      </div>
+      <div id="weather-city-body" class="overflow-y-auto flex-1 min-h-0 px-4"></div>
+    </div>
+  </div>
+
   <!-- ==================== GALLERY PROGRESS OVERLAY ==================== -->
   <div id="gallery-progress-backdrop"></div>
   <div id="gallery-progress-card">
@@ -8915,7 +8927,7 @@ service cloud.firestore {
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
               Save
             </button>
-            <button onclick="openWeatherView()"
+            <button onclick="closeWeatherSettingsModal(); openWeatherView();"
               class="h-10 px-4 rounded-xl bg-sky-50 border border-sky-200 text-sky-600 text-xs font-bold hover:bg-sky-100 transition-colors flex items-center gap-1.5 shrink-0">
               🌦️ View Weather Now
             </button>
@@ -11918,40 +11930,28 @@ service cloud.firestore {
             return { city, daily: data.daily };
           } catch (e) { return { city, daily: null }; }
         }));
+        window._weatherResults = results; // cached so tapping a city doesn't refetch
         if (grid) {
-          // Collapsed by default — showing all 20 cities' full multi-day forecasts at once was
-          // a wall of text; now each city is just a name/current-temp header until tapped.
+          // Each city is just a name + current temp — tapping it pops open a dedicated,
+          // full-screen-friendly detail modal (more reliable than an inline expand, which
+          // didn't reflow cleanly inside the 2/3-column grid).
           grid.innerHTML = results.map(({ city, daily }, idx) => {
-            const panelId = 'weather-panel-' + idx;
             if (!daily) {
               return `<div class="bg-white rounded-2xl border border-gray-100 p-4"><p class="text-sm font-bold text-gray-700">${escapeHtml(city.nameAr)} (${city.name})</p><p class="text-xs text-gray-400 mt-2">Couldn't load forecast</p></div>`;
             }
             const nowIcon = _weatherIcon(daily.weathercode[0]);
             const nowHi = Math.round(daily.temperature_2m_max[0]);
             const nowLo = Math.round(daily.temperature_2m_min[0]);
-            const rows = daily.time.map((date, i) => {
-              const hi = Math.round(daily.temperature_2m_max[i]);
-              const lo = Math.round(daily.temperature_2m_min[i]);
-              const icon = _weatherIcon(daily.weathercode[i]);
-              const d = new Date(date);
-              const label = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-              return `<div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-                <span class="text-xs text-gray-500">${label}</span>
-                <span class="text-base">${icon}</span>
-                <span class="text-xs font-bold text-gray-700">${hi}° <span class="text-gray-400 font-medium">/ ${lo}°</span></span>
-              </div>`;
-            }).join('');
-            return `<div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <button type="button" onclick="toggleWeatherCityPanel('${panelId}')" class="w-full flex items-center justify-between p-4 text-left">
+            return `<button type="button" onclick="openWeatherCityDetail(${idx})" class="bg-white rounded-2xl border border-gray-100 hover:border-[#e85d3a]/40 hover:shadow-md transition-all p-4 text-left w-full">
+              <div class="flex items-center justify-between">
                 <p class="text-sm font-bold text-gray-800">${escapeHtml(city.nameAr)} <span class="text-gray-400 font-normal">(${city.name})</span></p>
                 <span class="flex items-center gap-2 shrink-0">
                   <span class="text-base">${nowIcon}</span>
                   <span class="text-xs font-bold text-gray-600">${nowHi}°/${nowLo}°</span>
-                  <svg class="w-3.5 h-3.5 text-gray-400 weather-chevron" id="${panelId}-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                  <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
                 </span>
-              </button>
-              <div id="${panelId}" class="hidden px-4 pb-4">${rows}</div>
-            </div>`;
+              </div>
+            </button>`;
           }).join('');
         }
       } catch (e) {
@@ -11959,13 +11959,34 @@ service cloud.firestore {
       }
     };
 
-    window.toggleWeatherCityPanel = function(panelId) {
-      const panel = document.getElementById(panelId);
-      const chevron = document.getElementById(panelId + '-chevron');
-      if (!panel) return;
-      const isHidden = panel.classList.contains('hidden');
-      panel.classList.toggle('hidden', !isHidden);
-      if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+    // Dedicated popup for one city's full forecast — sits above the main weather grid modal.
+    window.openWeatherCityDetail = function(idx) {
+      const entry = (window._weatherResults || [])[idx];
+      if (!entry || !entry.daily) return;
+      const { city, daily } = entry;
+      const modal = document.getElementById('weather-city-modal');
+      const title = document.getElementById('weather-city-title');
+      const body = document.getElementById('weather-city-body');
+      if (title) title.textContent = `${city.nameAr} (${city.name})`;
+      if (body) {
+        body.innerHTML = daily.time.map((date, i) => {
+          const hi = Math.round(daily.temperature_2m_max[i]);
+          const lo = Math.round(daily.temperature_2m_min[i]);
+          const icon = _weatherIcon(daily.weathercode[i]);
+          const d = new Date(date);
+          const label = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+          return `<div class="flex items-center justify-between py-3 px-1 border-b border-gray-50 last:border-0">
+            <span class="text-sm text-gray-600 font-medium">${label}</span>
+            <span class="text-2xl">${icon}</span>
+            <span class="text-sm font-bold text-gray-800">${hi}° <span class="text-gray-400 font-medium">/ ${lo}°</span></span>
+          </div>`;
+        }).join('');
+      }
+      if (modal) { modal.style.display = 'flex'; modal.classList.remove('hidden'); }
+    };
+    window.closeWeatherCityDetail = function() {
+      const modal = document.getElementById('weather-city-modal');
+      if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
     };
 
     window.closeWeatherView = function() {
