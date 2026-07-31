@@ -8507,74 +8507,98 @@ service cloud.firestore {
                 </div>
               </div>
 
-              <!-- Top opened folders -->
+              <!-- Every section below is collapsed by default — tap the header to reveal it. -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Most Opened Folders</p>
-                <div id="stats-top-opened-folders" class="space-y-2"></div>
+                <button type="button" onclick="toggleStatsSection('stats-top-opened-folders')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Most Opened Folders</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-top-opened-folders-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-top-opened-folders" class="space-y-2 hidden"></div>
               </div>
 
-              <!-- Top viewed images -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Most Viewed Images</p>
-                <div id="stats-top-viewed" class="space-y-2"></div>
+                <button type="button" onclick="toggleStatsSection('stats-top-viewed')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Most Viewed Images</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-top-viewed-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-top-viewed" class="space-y-2 hidden"></div>
               </div>
 
-              <!-- Top downloaded -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Downloaded Images</p>
-                <div id="stats-top-downloaded" class="space-y-2"></div>
+                <button type="button" onclick="toggleStatsSection('stats-top-downloaded')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Top Downloaded Images</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-top-downloaded-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-top-downloaded" class="space-y-2 hidden"></div>
               </div>
 
-              <!-- Top shared -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Shared Images</p>
-                <div id="stats-top-shared" class="space-y-2"></div>
+                <button type="button" onclick="toggleStatsSection('stats-top-shared')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Top Shared Images</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-top-shared-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-top-shared" class="space-y-2 hidden"></div>
               </div>
 
-              <!-- Top folders -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Top Folders (opens + downloads + shares)</p>
-                <div id="stats-top-folders" class="space-y-2"></div>
+                <button type="button" onclick="toggleStatsSection('stats-top-folders')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Top Folders (opens + downloads + shares)</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-top-folders-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-top-folders" class="space-y-2 hidden"></div>
               </div>
 
               <div class="grid sm:grid-cols-2 gap-6">
-                <!-- By role -->
                 <div>
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Role</p>
-                  <div id="stats-by-role" class="space-y-2"></div>
+                  <button type="button" onclick="toggleStatsSection('stats-by-role')" class="w-full flex items-center justify-between mb-2">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">By Role</p>
+                    <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-by-role-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  <div id="stats-by-role" class="space-y-2 hidden"></div>
                 </div>
-                <!-- By device -->
                 <div>
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Device</p>
-                  <div id="stats-by-device" class="space-y-2"></div>
+                  <button type="button" onclick="toggleStatsSection('stats-by-device')" class="w-full flex items-center justify-between mb-2">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">By Device</p>
+                    <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-by-device-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  <div id="stats-by-device" class="space-y-2 hidden"></div>
                 </div>
               </div>
 
-              <!-- By region (Iraqi governorate when detected, city/country otherwise) -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Region</p>
-                <div id="stats-by-region" class="space-y-2"></div>
+                <button type="button" onclick="toggleStatsSection('stats-by-region')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">By Region</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-by-region-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-by-region" class="space-y-2 hidden"></div>
               </div>
 
-              <!-- By hour of day -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">By Hour of Day</p>
-                <div id="stats-by-hour" class="flex items-end gap-1 h-24 bg-gray-50 rounded-xl p-2"></div>
+                <button type="button" onclick="toggleStatsSection('stats-by-hour')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">By Hour of Day</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-by-hour-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-by-hour" class="hidden flex items-end gap-1 h-24 bg-gray-50 rounded-xl p-2"></div>
               </div>
 
-              <!-- Detailed per-role activity: exactly which folder/image, how many times, when -->
               <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Activity by Role</p>
-                <div id="stats-role-breakdown" class="space-y-3"></div>
+                <button type="button" onclick="toggleStatsSection('stats-role-breakdown')" class="w-full flex items-center justify-between mb-2">
+                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Activity by Role</p>
+                  <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-role-breakdown-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div id="stats-role-breakdown" class="space-y-3 hidden"></div>
               </div>
 
               <!-- Raw recent event log -->
               <div>
                 <div class="flex items-center justify-between mb-2">
-                  <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Visits (most recent 50)</p>
+                  <button type="button" onclick="toggleStatsSection('stats-live-visits-wrap')" class="flex items-center gap-1.5">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Visits (most recent 50)</p>
+                    <svg class="w-3.5 h-3.5 text-gray-300 stats-section-chevron" id="stats-live-visits-wrap-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
                   <button onclick="clearAllAnalyticsData()" class="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors">🗑️ Clear All Data</button>
                 </div>
-                <div class="overflow-x-auto rounded-xl border border-gray-100">
+                <div id="stats-live-visits-wrap" class="hidden overflow-x-auto rounded-xl border border-gray-100">
                   <table class="w-full text-xs">
                     <thead>
                       <tr class="bg-gray-50 text-gray-400 text-[10px] uppercase">
@@ -9180,6 +9204,18 @@ service cloud.firestore {
     // ══════════════════════════════════════════════════════
     let _statsRangeDays = 30; // 7 | 30 | 90 | 'all'
     let _statsCache = null;   // last-fetched raw events, re-aggregated locally on range change
+
+    // Shared accordion toggle for every collapsible section in the Statistics tab — all
+    // start hidden, revealed on tap so the merged Overview+Statistics page isn't one long
+    // wall of data by default.
+    window.toggleStatsSection = function(id) {
+      const el = document.getElementById(id);
+      const chevron = document.getElementById(id + '-chevron');
+      if (!el) return;
+      const isHidden = el.classList.contains('hidden');
+      el.classList.toggle('hidden', !isHidden);
+      if (chevron) chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+    };
 
     window.setStatsRange = function(days) {
       _statsRangeDays = days;
