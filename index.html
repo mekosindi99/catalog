@@ -9427,10 +9427,18 @@ service cloud.firestore {
           const ms = _statsEventMs(e);
           const timeLabel = ms ? new Date(ms).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
           const place = [e.city, e.governorate || e.region].filter(Boolean).join(', ') || e.country || '—';
+          // Same as "Activity by Role" — a real product thumbnail for model-related actions
+          // instead of just a generic icon, so it's clear at a glance which item this is.
+          const m = e.modelId ? (S.allModels || []).find(x => x.id === e.modelId) : null;
+          const thumbUrl = m ? (optimizedCloudinaryUrl(m.imageUrl, '400x400') || '') : '';
+          const actionIcon = thumbUrl
+            ? `<img src="${thumbUrl}" class="w-5 h-5 rounded object-cover inline-block align-middle mr-1" />`
+            : `${_statsTypeIcon[e.type] || '•'} `;
+          const actionLabel = (_statsTypeLabel[e.type] || e.type) + (m ? ` (${m.modelCode})` : '');
           return `<tr class="border-t border-gray-50">
             <td class="px-2 py-1.5 text-gray-500 whitespace-nowrap">${timeLabel}</td>
             <td class="px-2 py-1.5 font-semibold">${_statsRoleLabel(e.role)}</td>
-            <td class="px-2 py-1.5">${_statsTypeIcon[e.type] || '•'} ${_statsTypeLabel[e.type] || e.type}</td>
+            <td class="px-2 py-1.5 whitespace-nowrap">${actionIcon}${escapeHtml(actionLabel)}</td>
             <td class="px-2 py-1.5 text-gray-500">${e.device || ''}</td>
             <td class="px-2 py-1.5 text-gray-500">${escapeHtml(place)}</td>
           </tr>`;
